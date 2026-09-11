@@ -4,8 +4,12 @@
 
 import type { ComponentType } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { BranVanCollapsed, BranVanExpanded } from "./branvan/BranVanTile";
+import { EventsCollapsed, EventsExpanded } from "./events/EventsTile";
 import { FoodCollapsed, FoodExpanded } from "./food/FoodTile";
 import { HoursCollapsed, HoursExpanded } from "./hours/HoursTile";
+import { LaundryCollapsed, LaundryExpanded } from "./laundry/LaundryTile";
+import { SkyCollapsed, SkyExpanded } from "./sky/SkyTile";
 import type { TileDef, TileId } from "./registry";
 import { ExpandedShell } from "./shells";
 
@@ -14,6 +18,10 @@ type Content = { Collapsed: ComponentType; Expanded: ComponentType };
 const CONTENT: Partial<Record<TileId, Content>> = {
   hours: { Collapsed: HoursCollapsed, Expanded: HoursExpanded },
   food: { Collapsed: FoodCollapsed, Expanded: FoodExpanded },
+  laundry: { Collapsed: LaundryCollapsed, Expanded: LaundryExpanded },
+  branvan: { Collapsed: BranVanCollapsed, Expanded: BranVanExpanded },
+  events: { Collapsed: EventsCollapsed, Expanded: EventsExpanded },
+  sky: { Collapsed: SkyCollapsed, Expanded: SkyExpanded },
 };
 
 type Props = { def: TileDef; expanded: boolean };
