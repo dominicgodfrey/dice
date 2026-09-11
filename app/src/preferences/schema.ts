@@ -15,6 +15,8 @@ export type Preferences = {
   followedVenues: string[];
   laundryBuilding: string | null;
   homeStop: string | null;
+  /** Has the first-launch gallery been shown (D11)? */
+  onboarded: boolean;
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -25,6 +27,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   followedVenues: [],
   laundryBuilding: null,
   homeStop: null,
+  onboarded: false,
 };
 
 /**
