@@ -30,7 +30,9 @@
     "plugins": [
       "expo-router",
       "@sentry/react-native",
-      "expo-localization"
+      "expo-localization",
+      "expo-font",
+      "expo-splash-screen"
     ]
   }
 }

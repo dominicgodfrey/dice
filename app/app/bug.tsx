@@ -12,10 +12,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from "react-native";
+import { Text } from "../src/ui/Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { captureMessage, sentryEnabled, track } from "../src/observability";
 import { apiBase } from "../src/sources/client";

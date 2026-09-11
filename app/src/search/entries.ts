@@ -7,6 +7,7 @@
 // against the live services before the demo goes to students.
 
 import type { TileId } from "../tiles/registry";
+import type { IconName } from "../ui/Icon";
 
 export type SearchAction =
   | { kind: "url"; url: string }
@@ -18,14 +19,12 @@ export type SearchEntry = {
   title: string;
   /** Extra words the fuzzy match considers. */
   keywords: string[];
-  /** An emoji for now; icons come with the palette (D33). */
-  icon: string;
+  /** A Feather icon name. */
+  icon: IconName;
   /** Short line under the title. */
   subtitle: string;
   action: SearchAction;
   chip?: boolean;
-  /** Link tile colour when promoted. */
-  color?: string;
 };
 
 export const ENTRIES: readonly SearchEntry[] = [
@@ -33,50 +32,46 @@ export const ENTRIES: readonly SearchEntry[] = [
     id: "moodle",
     title: "Moodle",
     keywords: ["latte", "courses", "classes", "assignments", "lms"],
-    icon: "📚",
+    icon: "book",
     subtitle: "Courses and assignments",
     action: { kind: "url", url: "https://moodle.brandeis.edu" },
     chip: true,
-    color: "#F26B3A",
   },
   {
     id: "workday",
     title: "Workday",
     keywords: ["registration", "grades", "pay", "timesheet", "sage"],
-    icon: "🗂️",
+    icon: "briefcase",
     subtitle: "Registration, grades, pay",
     action: { kind: "url", url: "https://www.myworkday.com/brandeis" },
     chip: true,
-    color: "#0875E1",
   },
   {
     id: "myhousing",
     title: "MyHousing",
     keywords: ["housing", "dorm", "room", "residence", "starrez"],
-    icon: "🏠",
+    icon: "home",
     subtitle: "Housing portal",
     // VERIFY: StarRez portal URL.
     action: {
       kind: "url",
       url: "https://brandeis.starrezhousing.com/StarRezPortalX",
     },
-    color: "#7B61FF",
   },
   {
     id: "campusgroups",
     title: "CampusGroups",
     keywords: ["clubs", "events", "register", "organizations"],
-    icon: "🎪",
+    icon: "users",
     subtitle: "Clubs and event registration",
     action: { kind: "url", url: "https://brandeis.campusgroups.com" },
     chip: true,
-    color: "#2E9E6B",
   },
   {
     id: "grubhub",
     title: "Grubhub",
     keywords: ["food", "order", "dining", "pickup", "campus dining"],
-    icon: "🥡",
+    icon: "shopping-bag",
     subtitle: "Order ahead on campus",
     // VERIFY: campus dining landing URL.
     action: {
@@ -84,23 +79,21 @@ export const ENTRIES: readonly SearchEntry[] = [
       url: "https://www.grubhub.com/campus-dining/brandeis",
     },
     chip: true,
-    color: "#E8613C",
   },
   {
     id: "reusepass",
     title: "ReusePass",
     keywords: ["topanga", "containers", "reusable", "return"],
-    icon: "♻️",
+    icon: "refresh-cw",
     subtitle: "Reusable container returns",
     // VERIFY: Topanga ReusePass URL.
     action: { kind: "url", url: "https://www.reusepass.com" },
-    color: "#3A9D5D",
   },
   {
     id: "onesearch",
     title: "OneSearch",
     keywords: ["library", "books", "articles", "primo", "catalog", "research"],
-    icon: "🔎",
+    icon: "search",
     subtitle: "Search the library",
     // VERIFY: Primo view ID.
     action: {
@@ -108,35 +101,31 @@ export const ENTRIES: readonly SearchEntry[] = [
       url: "https://brandeis.primo.exlibrisgroup.com/discovery/search?query=any,contains,{query}&vid=01BRAND_INST:BRAND",
     },
     chip: true,
-    color: "#1F6FB2",
   },
   {
     id: "libcal",
     title: "Study rooms",
     keywords: ["libcal", "library", "reserve", "book a room", "group study"],
-    icon: "🪑",
+    icon: "layout",
     subtitle: "Reserve a library study room",
     action: { kind: "url", url: "https://brandeis.libcal.com" },
-    color: "#5C6BC0",
   },
   {
     id: "25live",
     title: "25Live",
     keywords: ["classroom", "reserve", "space", "event space", "room booking"],
-    icon: "🏫",
+    icon: "grid",
     subtitle: "Reserve a classroom or event space",
     action: { kind: "url", url: "https://25live.collegenet.com/pro/brandeis" },
-    color: "#8E6C3A",
   },
   {
     id: "facilities",
     title: "Work order",
     keywords: ["facilities", "repair", "broken", "maintenance", "heat", "leak"],
-    icon: "🛠️",
+    icon: "tool",
     subtitle: "Report something broken",
     // VERIFY: facilities work-order form URL.
     action: { kind: "url", url: "https://www.brandeis.edu/facilities/" },
-    color: "#6B7280",
   },
   {
     id: "emergency",
@@ -150,7 +139,7 @@ export const ENTRIES: readonly SearchEntry[] = [
       "help",
       "counseling",
     ],
-    icon: "🆘",
+    icon: "alert-octagon",
     subtitle: "BEMCo, Public Safety, 911",
     action: { kind: "route", route: "/emergency" },
   },
@@ -158,7 +147,7 @@ export const ENTRIES: readonly SearchEntry[] = [
     id: "edit",
     title: "Edit tiles",
     keywords: ["hide", "show", "rearrange", "customize", "layout"],
-    icon: "🎛️",
+    icon: "sliders",
     subtitle: "Choose what is on your home screen",
     action: { kind: "route", route: "/edit" },
   },
@@ -166,7 +155,7 @@ export const ENTRIES: readonly SearchEntry[] = [
     id: "bug",
     title: "Report a bug",
     keywords: ["feedback", "broken", "wrong", "problem", "issue", "crash"],
-    icon: "🐛",
+    icon: "message-square",
     subtitle: "Tell the team what went wrong",
     action: { kind: "route", route: "/bug" },
   },
@@ -174,7 +163,7 @@ export const ENTRIES: readonly SearchEntry[] = [
     id: "privacy",
     title: "Privacy policy",
     keywords: ["data", "tracking", "analytics"],
-    icon: "🔒",
+    icon: "lock",
     subtitle: "What Dice collects",
     action: { kind: "route", route: "/privacy" },
   },
@@ -182,7 +171,7 @@ export const ENTRIES: readonly SearchEntry[] = [
     id: "about",
     title: "About Dice",
     keywords: ["version", "who made this", "disclaimer", "affiliated"],
-    icon: "🎲",
+    icon: "info",
     subtitle: "Not affiliated with Brandeis",
     action: { kind: "route", route: "/about" },
   },
@@ -190,7 +179,7 @@ export const ENTRIES: readonly SearchEntry[] = [
     id: "join",
     title: "Join the team",
     keywords: ["contribute", "help build", "github", "developer", "design"],
-    icon: "🙌",
+    icon: "user-plus",
     subtitle: "Help build Dice",
     action: { kind: "route", route: "/join" },
   },
@@ -198,7 +187,7 @@ export const ENTRIES: readonly SearchEntry[] = [
     id: "tile-hours",
     title: "Hours",
     keywords: ["open", "closed", "when does", "library hours", "dining hours"],
-    icon: "🕒",
+    icon: "clock",
     subtitle: "Tile",
     action: { kind: "tile", tile: "hours" },
   },
@@ -206,7 +195,7 @@ export const ENTRIES: readonly SearchEntry[] = [
     id: "tile-food",
     title: "Food",
     keywords: ["menu", "dining", "sherman", "usdan", "lunch", "dinner"],
-    icon: "🍽️",
+    icon: "coffee",
     subtitle: "Tile",
     action: { kind: "tile", tile: "food" },
   },
@@ -214,7 +203,7 @@ export const ENTRIES: readonly SearchEntry[] = [
     id: "tile-laundry",
     title: "Laundry",
     keywords: ["washer", "dryer", "machines"],
-    icon: "🧺",
+    icon: "droplet",
     subtitle: "Tile",
     action: { kind: "tile", tile: "laundry" },
   },
@@ -222,7 +211,7 @@ export const ENTRIES: readonly SearchEntry[] = [
     id: "tile-branvan",
     title: "BranVan",
     keywords: ["shuttle", "bus", "van", "waltham", "boston", "cambridge"],
-    icon: "🚐",
+    icon: "truck",
     subtitle: "Tile",
     action: { kind: "tile", tile: "branvan" },
   },
@@ -230,7 +219,7 @@ export const ENTRIES: readonly SearchEntry[] = [
     id: "tile-events",
     title: "Events",
     keywords: ["calendar", "what's on", "this week", "academic calendar"],
-    icon: "📅",
+    icon: "calendar",
     subtitle: "Tile",
     action: { kind: "tile", tile: "events" },
   },
@@ -238,7 +227,7 @@ export const ENTRIES: readonly SearchEntry[] = [
     id: "tile-sky",
     title: "Sky",
     keywords: ["sunset", "sunrise", "moon", "planets", "stars", "astronomy"],
-    icon: "🌙",
+    icon: "moon",
     subtitle: "Tile",
     action: { kind: "tile", tile: "sky" },
   },
@@ -250,7 +239,7 @@ export const ENTRY_BY_ID: ReadonlyMap<string, SearchEntry> = new Map(
 
 export const CHIPS: readonly SearchEntry[] = ENTRIES.filter((e) => e.chip);
 
-/** Entries that can become link tiles (D12). */
+/** Entries that can sit on the Links tile (D35). */
 export const PROMOTABLE: readonly SearchEntry[] = ENTRIES.filter(
   (e) => e.action.kind === "url",
 );

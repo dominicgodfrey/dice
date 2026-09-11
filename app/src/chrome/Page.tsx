@@ -2,15 +2,25 @@
 
 import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
-import {
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Icon } from "../ui/Icon";
+import { Text } from "../ui/Text";
+import { colors, radius, space, type } from "../ui/theme";
+
+export function BackButton({ label = "Back" }: { label?: string }) {
+  const router = useRouter();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
+      style={({ pressed }) => [styles.back, pressed && styles.pressed]}
+    >
+      <Icon name="chevron-left" size={18} color={colors.muted} />
+      <Text style={styles.backText}>{label}</Text>
+    </Pressable>
+  );
+}
 
 export function Page({
   title,
@@ -19,25 +29,19 @@ export function Page({
   title: string;
   children: ReactNode;
 }) {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   return (
     <ScrollView
       style={styles.screen}
       contentContainerStyle={[
         styles.content,
-        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 },
+        {
+          paddingTop: insets.top + space.md,
+          paddingBottom: insets.bottom + space.xxl,
+        },
       ]}
     >
-      <Pressable
-        accessibilityRole="button"
-        onPress={() =>
-          router.canGoBack() ? router.back() : router.replace("/")
-        }
-        style={({ pressed }) => [styles.back, pressed && styles.pressed]}
-      >
-        <Text style={styles.backText}>Back</Text>
-      </Pressable>
+      <BackButton />
       <Text style={styles.title}>{title}</Text>
       {children}
     </ScrollView>
@@ -68,36 +72,95 @@ export function Spacer() {
   return <View style={styles.spacer} />;
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#ffffff" },
+/** A primary button for pages. */
+export function Button({
+  label,
+  onPress,
+  danger,
+  disabled,
+}: {
+  label: string;
+  onPress: () => void;
+  danger?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.button,
+        danger && styles.buttonDanger,
+        disabled && styles.buttonDisabled,
+        pressed && styles.pressed,
+      ]}
+    >
+      <Text style={styles.buttonText}>{label}</Text>
+    </Pressable>
+  );
+}
+
+export const pageStyles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.bg },
   content: {
-    paddingHorizontal: 20,
+    paddingHorizontal: space.xl,
     maxWidth: 640,
     width: "100%",
     alignSelf: "center",
   },
+  title: {
+    ...type.display,
+    fontWeight: "600",
+    letterSpacing: -0.3,
+    marginBottom: space.md,
+  },
+  lead: { ...type.body, color: colors.muted, marginBottom: space.lg },
+  input: {
+    ...type.body,
+    color: colors.text,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.control,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: space.md,
+    fontFamily: "Inter_400Regular",
+  },
+});
+
+const styles = StyleSheet.create({
+  ...pageStyles,
   back: {
+    flexDirection: "row",
+    alignItems: "center",
     alignSelf: "flex-start",
     paddingVertical: 8,
     paddingRight: 12,
-    marginBottom: 8,
+    marginBottom: space.sm,
+    marginLeft: -4,
   },
-  backText: { fontSize: 16, color: "#555555" },
+  backText: { ...type.body, color: colors.muted },
   pressed: { opacity: 0.7 },
-  title: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#111111",
-    marginBottom: 12,
-  },
   h: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111111",
-    marginTop: 20,
+    ...type.heading,
+    fontWeight: "600",
+    marginTop: space.xl,
     marginBottom: 6,
   },
-  p: { fontSize: 16, lineHeight: 24, color: "#333333", marginBottom: 12 },
-  a: { color: "#2255aa", textDecorationLine: "underline" },
-  spacer: { height: 12 },
+  p: { ...type.body, color: "#333333", marginBottom: space.md },
+  a: { color: colors.accent, textDecorationLine: "underline" },
+  spacer: { height: space.md },
+  button: {
+    height: 50,
+    borderRadius: radius.control,
+    backgroundColor: colors.text,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: space.xl,
+  },
+  buttonDanger: { backgroundColor: colors.danger },
+  buttonDisabled: { opacity: 0.4 },
+  buttonText: { ...type.body, color: colors.onDark, fontWeight: "600" },
 });
