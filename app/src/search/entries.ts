@@ -163,6 +163,14 @@ export const ENTRIES: readonly SearchEntry[] = [
     action: { kind: "route", route: "/edit" },
   },
   {
+    id: "bug",
+    title: "Report a bug",
+    keywords: ["feedback", "broken", "wrong", "problem", "issue", "crash"],
+    icon: "🐛",
+    subtitle: "Tell the team what went wrong",
+    action: { kind: "route", route: "/bug" },
+  },
+  {
     id: "privacy",
     title: "Privacy policy",
     keywords: ["data", "tracking", "analytics"],
