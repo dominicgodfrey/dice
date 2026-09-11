@@ -336,7 +336,9 @@ sunrise with a hollow marker when the moon is down. The times sit at the
 ends and the sky's name ("Golden hour") between them. The owner asked for
 a curved number line; the previous "Day · Sunrise 6:20 AM · Sunset 7:01 PM"
 line said the same thing without showing where in the day you are.
-Computed on device from the campus coordinate like the rest of D17.
+Computed on device from the campus coordinate like the rest of D17. The
+feet of the arch carry icons, sunrise and sunset or the moon for its
+arc, with the times beside them, instead of the words.
 
 **D43. The laundry preference is a room, not a quad.** *Revises D18.*
 LaundryView groups Brandeis into campuses ("Massell Quad") of rooms
