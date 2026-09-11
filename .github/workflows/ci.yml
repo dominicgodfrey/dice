@@ -19,6 +19,8 @@ jobs:
           cache-dependency-path: app/package-lock.json
       - run: npm ci
       - run: npm run check
+      - name: Bundled fixtures match server/fixtures
+        run: git diff --exit-code -- src/fixtures/data
       - run: npx expo export -p web
 
   server:
@@ -33,4 +35,5 @@ jobs:
           go-version-file: server/go.mod
       - run: test -z "$(gofmt -l .)"
       - run: go vet ./...
+      - run: go build ./...
       - run: go test ./...

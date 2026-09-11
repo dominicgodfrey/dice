@@ -28,7 +28,21 @@ cd server && go run .
 ```
 
 The app opens at http://localhost:8081 and the server at
-http://localhost:8080/healthz.
+http://localhost:8080/healthz. In development the app talks to the local
+server; without one it runs on the bundled fixtures. Copy
+`app/.env.example` to `app/.env.local` to point at another server or turn
+on Sentry and PostHog. The server's environment variables are listed at
+the top of `server/main.go`.
+
+## Data
+
+Hand-maintained data lives in `server/fixtures/*.json`. The server serves
+each at `/api/v1/<name>`, and the app bundles a copy as its fallback. After
+editing a fixture run `npm run sync-fixtures` in `app/` (the check script
+does it too); CI fails if the copies drift.
+
+[docs/WIRING.md](docs/WIRING.md) lists the accounts, keys and dashboard
+steps that only the owner can do, and what each unlocks.
 
 ## Check it
 

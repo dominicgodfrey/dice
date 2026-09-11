@@ -307,12 +307,15 @@ run in parallel; phases mostly cannot.
 
 ### Phase 3: backend and the source seam
 
-- [ ] Go server serving every fixture over HTTP; app sources fetch with
-      fixture fallback (D5, D6).
-- [ ] Bug report endpoint, stored and emailed; Sentry and PostHog wired,
-      privacy page updated to name them (D21).
-- [ ] Venue fixture: both dining halls, cafés, library, gym, the offices a
-      student actually visits, with weekly hours (D16).
+- [x] Go server serving every fixture over HTTP; app sources fetch with
+      fixture fallback (D5, D6). *Server deployment and the API URL are
+      owner steps; see WIRING.md.*
+- [x] Bug report endpoint, stored and emailed; Sentry and PostHog wired,
+      privacy page updated to name them (D21). *Both SDKs are no-ops until
+      their keys are set; SMTP is optional. See WIRING.md.*
+- [x] Venue fixture: both dining halls, cafés, library, gym, the offices a
+      student actually visits, with weekly hours (D16). *Hours unverified;
+      see WIRING.md.*
 
 ### Phase 4: tiles with real behaviour
 
