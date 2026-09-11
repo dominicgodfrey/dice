@@ -27,6 +27,11 @@ export default function About() {
         </A>{" "}
         under the MIT license.
       </P>
+      <H>Something wrong?</H>
+      <P>
+        Search for &quot;report a bug&quot; in the app, or open an issue on
+        GitHub.
+      </P>
       <H>Version</H>
       <P>{version}</P>
     </Page>

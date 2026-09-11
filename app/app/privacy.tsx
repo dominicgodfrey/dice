@@ -26,11 +26,28 @@ export default function Privacy() {
         map link, and is not stored or sent anywhere else. The Sky tile uses a
         fixed campus coordinate, not yours.
       </P>
-      <H>Crash reports and analytics</H>
+      <H>Crash reports</H>
       <P>
-        Not yet. When we add them this page will name each provider and say
-        exactly what it receives, before the build that includes them is
-        released.
+        When a build has crash reporting turned on, errors are sent to Sentry
+        (sentry.io). Each report carries the error, the app version, your
+        platform and device model, and the screens you visited just before. It
+        never carries your name, email, or location. Builds without a Sentry key
+        send nothing.
+      </P>
+      <H>Analytics</H>
+      <P>
+        When a build has analytics turned on, Dice sends PostHog (posthog.com)
+        which screens are opened and a few named events, such as a tile being
+        expanded, with the app version and platform. There is no session
+        recording and no automatic capture of what you tap or type. Builds
+        without a PostHog key send nothing.
+      </P>
+      <H>Bug reports</H>
+      <P>
+        A bug report you send goes to our server and is emailed to the team. It
+        contains what you wrote, the email you chose to give, your platform, app
+        version and, on the web, your browser. Reports are kept until the bug is
+        fixed.
       </P>
       <H>Third-party links</H>
       <P>
