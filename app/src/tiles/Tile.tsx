@@ -1,24 +1,33 @@
-// One tile component, two layouts chosen by `expanded` (PLAN.md D9). Phase 1
-// ships the plain coloured square; real content per tile arrives in Phase 4.
-// Link tiles (D12) only have the collapsed layout.
+// One tile component, two layouts chosen by `expanded` (PLAN.md D9). Live
+// tiles dispatch to their content; link tiles (D12) only have the collapsed
+// layout; a live tile without content yet shows the plain square.
 
-import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { WIDE_BREAKPOINT } from "../grid/layout";
-import type { TileDef } from "./registry";
+import type { ComponentType } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { FoodCollapsed, FoodExpanded } from "./food/FoodTile";
+import { HoursCollapsed, HoursExpanded } from "./hours/HoursTile";
+import type { TileDef, TileId } from "./registry";
+import { ExpandedShell } from "./shells";
+
+type Content = { Collapsed: ComponentType; Expanded: ComponentType };
+
+const CONTENT: Partial<Record<TileId, Content>> = {
+  hours: { Collapsed: HoursCollapsed, Expanded: HoursExpanded },
+  food: { Collapsed: FoodCollapsed, Expanded: FoodExpanded },
+};
 
 type Props = { def: TileDef; expanded: boolean };
 
 export function Tile({ def, expanded }: Props) {
   if (def.kind === "link") return <LinkLayout def={def} />;
-  return expanded ? (
-    <ExpandedLayout def={def} />
-  ) : (
-    <CollapsedLayout def={def} />
-  );
+  const content = CONTENT[def.id];
+  if (content) {
+    return expanded ? <content.Expanded /> : <content.Collapsed />;
+  }
+  return expanded ? <PlainExpanded def={def} /> : <PlainCollapsed def={def} />;
 }
 
-function CollapsedLayout({ def }: { def: TileDef }) {
+function PlainCollapsed({ def }: { def: TileDef }) {
   return (
     <View style={styles.collapsed}>
       <Text style={styles.collapsedTitle}>{def.title}</Text>
@@ -35,26 +44,13 @@ function LinkLayout({ def }: { def: Extract<TileDef, { kind: "link" }> }) {
   );
 }
 
-function ExpandedLayout({ def }: { def: TileDef }) {
-  const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const fillsScreen = width <= WIDE_BREAKPOINT;
+function PlainExpanded({ def }: { def: TileDef }) {
   return (
-    <View
-      style={[
-        styles.expanded,
-        {
-          paddingTop: (fillsScreen ? insets.top : 0) + 24,
-          paddingBottom: (fillsScreen ? insets.bottom : 0) + 24,
-        },
-      ]}
-    >
-      <View style={styles.grabber} />
-      <Text style={styles.expandedTitle}>{def.title}</Text>
+    <ExpandedShell title={def.title}>
       <Text style={styles.expandedBody}>
         Nothing here yet. Swipe down to go back.
       </Text>
-    </View>
+    </ExpandedShell>
   );
 }
 
@@ -62,16 +58,6 @@ const styles = StyleSheet.create({
   collapsed: { flex: 1, justifyContent: "flex-end", padding: 14 },
   collapsedTitle: { color: "#ffffff", fontSize: 17, fontWeight: "600" },
   linkIcon: { fontSize: 34, marginBottom: 6 },
-  expanded: { flex: 1, paddingHorizontal: 24 },
-  grabber: {
-    alignSelf: "center",
-    width: 36,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.5)",
-    marginBottom: 20,
-  },
-  expandedTitle: { color: "#ffffff", fontSize: 34, fontWeight: "700" },
   expandedBody: {
     color: "rgba(255,255,255,0.85)",
     fontSize: 16,
