@@ -297,11 +297,13 @@ run in parallel; phases mostly cannot.
 
 ### Phase 2: chrome and static content
 
-- [ ] Emergency page with confirmed dials and share-location SMS (D14).
-- [ ] Search fixture, fuzzy matching, three action kinds, chip row (D15).
-- [ ] Link tiles promotable from search and the gallery (D12).
-- [ ] Privacy, join the team, about with disclaimer (D22).
-- [ ] Ambient header from sunrise and sunset (D17 layer 1).
+- [x] Emergency page with confirmed dials and share-location SMS (D14).
+      *Numbers are in `app/src/fixtures/emergency.ts` and still need
+      verifying; see section 4.*
+- [x] Search fixture, fuzzy matching, three action kinds, chip row (D15).
+- [x] Link tiles promotable from search and the gallery (D12).
+- [x] Privacy, join the team, about with disclaimer (D22).
+- [x] Ambient header from sunrise and sunset (D17 layer 1).
 
 ### Phase 3: backend and the source seam
 
@@ -356,3 +358,12 @@ Unchanged from the PRD, plus two the interview added:
 - Will Transportation share the TripShot GTFS-RT feed?
 - Does Brandeis plan to offer mobile credential for the new cards?
 - Does LibCal expose a public availability endpoint for study rooms?
+
+Added while building Phase 2, each a quick check against the live service:
+
+- Are the emergency numbers in `app/src/fixtures/emergency.ts` right,
+  especially the after-hours counseling line? Set `verified` to the date
+  once confirmed.
+- Are the vendor URLs marked VERIFY in `app/src/search/entries.ts` right
+  (StarRez housing portal, Grubhub campus page, ReusePass, the OneSearch
+  Primo view ID, the facilities work-order form)?
