@@ -3,26 +3,50 @@
 
 import eventsFixture from "../fixtures/data/events.json";
 import laundryFixture from "../fixtures/data/laundry.json";
+import menusFixture from "../fixtures/data/menus.json";
 import shuttleFixture from "../fixtures/data/shuttle.json";
 import venuesFixture from "../fixtures/data/venues.json";
-import { fetchWithFallback, hasArrays, type Sourced } from "./client";
-import type { EventsData, LaundryData, ShuttleData, VenuesData } from "./types";
+import { fetchWithFallback, hasArrays, isRecord, type Sourced } from "./client";
+import type {
+  EventsData,
+  LaundryData,
+  MenusData,
+  ShuttleData,
+  VenuesData,
+} from "./types";
 
 export type { Origin, Sourced } from "./client";
 export * from "./types";
 
+/** The bundled copies, for a first render before any fetch returns. */
+export const FIXTURES = {
+  venues: venuesFixture as unknown as VenuesData,
+  menus: menusFixture as unknown as MenusData,
+  laundry: laundryFixture as unknown as LaundryData,
+  shuttle: shuttleFixture as unknown as ShuttleData,
+  events: eventsFixture as unknown as EventsData,
+};
+
 export function getVenues(): Promise<Sourced<VenuesData>> {
   return fetchWithFallback(
     "/api/v1/venues",
-    venuesFixture as unknown as VenuesData,
+    FIXTURES.venues,
     (v): v is VenuesData => hasArrays(v, "venues"),
+  );
+}
+
+export function getMenus(): Promise<Sourced<MenusData>> {
+  return fetchWithFallback(
+    "/api/v1/menus",
+    FIXTURES.menus,
+    (v): v is MenusData => isRecord(v) && isRecord(v.halls),
   );
 }
 
 export function getLaundry(): Promise<Sourced<LaundryData>> {
   return fetchWithFallback(
     "/api/v1/laundry",
-    laundryFixture as unknown as LaundryData,
+    FIXTURES.laundry,
     (v): v is LaundryData => hasArrays(v, "buildings"),
   );
 }
@@ -30,7 +54,7 @@ export function getLaundry(): Promise<Sourced<LaundryData>> {
 export function getShuttle(): Promise<Sourced<ShuttleData>> {
   return fetchWithFallback(
     "/api/v1/shuttle",
-    shuttleFixture as unknown as ShuttleData,
+    FIXTURES.shuttle,
     (v): v is ShuttleData => hasArrays(v, "routes", "stops", "arrivals"),
   );
 }
@@ -38,7 +62,7 @@ export function getShuttle(): Promise<Sourced<ShuttleData>> {
 export function getEvents(): Promise<Sourced<EventsData>> {
   return fetchWithFallback(
     "/api/v1/events",
-    eventsFixture as unknown as EventsData,
+    FIXTURES.events,
     (v): v is EventsData => hasArrays(v, "events"),
   );
 }

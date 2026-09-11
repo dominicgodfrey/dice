@@ -84,3 +84,11 @@ export type CampusEvent = {
 };
 
 export type EventsData = { updated: string; events: CampusEvent[] };
+
+export type MenuStation = { station: string; items: string[] };
+
+/** halls[venueId][mealName] */
+export type MenusData = {
+  updated: string;
+  halls: Record<string, Record<string, MenuStation[]>>;
+};

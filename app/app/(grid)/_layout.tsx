@@ -10,6 +10,7 @@ import { BottomBar } from "../../src/chrome/BottomBar";
 import { ExpandProvider } from "../../src/expand/ExpandProvider";
 import { Grid } from "../../src/grid/Grid";
 import { usePreferences } from "../../src/preferences/store";
+import { SourcesProvider } from "../../src/sources/SourcesProvider";
 
 export default function GridLayout() {
   const router = useRouter();
@@ -23,11 +24,13 @@ export default function GridLayout() {
 
   return (
     <View style={styles.screen}>
-      <ExpandProvider>
-        <Grid />
-        <BottomBar />
-        <Slot />
-      </ExpandProvider>
+      <SourcesProvider>
+        <ExpandProvider>
+          <Grid />
+          <BottomBar />
+          <Slot />
+        </ExpandProvider>
+      </SourcesProvider>
     </View>
   );
 }

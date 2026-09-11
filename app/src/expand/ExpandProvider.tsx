@@ -29,11 +29,16 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import {
+  Gesture,
+  GestureDetector,
+  type NativeGesture,
+} from "react-native-gesture-handler";
 import Animated, {
   Extrapolation,
   interpolate,
   useAnimatedReaction,
+  useAnimatedScrollHandler,
   useAnimatedStyle,
   useDerivedValue,
   useReducedMotion,
@@ -62,6 +67,24 @@ type ExpandApi = {
 };
 
 const ExpandContext = createContext<ExpandApi | null>(null);
+
+/**
+ * What an expanded view's scroll must use so swipe-down still closes the
+ * card: report its offset, and run as a native gesture the pan knows about.
+ */
+type ExpandedScroll = {
+  onScroll: ReturnType<typeof useAnimatedScrollHandler>;
+  gesture: NativeGesture;
+};
+
+const ExpandedScrollContext = createContext<ExpandedScroll | null>(null);
+
+export function useExpandedScroll(): ExpandedScroll {
+  const v = useContext(ExpandedScrollContext);
+  if (!v)
+    throw new Error("useExpandedScroll must be used inside an expanded tile");
+  return v;
+}
 
 export function useExpand(): ExpandApi {
   const api = useContext(ExpandContext);
@@ -181,18 +204,33 @@ function Overlay({
     [open],
   );
 
+  // The expanded content scrolls inside the card. The pan only takes over
+  // when that scroll is at the top, so a swipe down first scrolls back up,
+  // then pulls the card closed.
   const drag = useSharedValue(0);
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((e) => {
+    scrollY.value = e.contentOffset.y;
+  });
+  const nativeScroll = Gesture.Native();
   const pan = Gesture.Pan()
     .activeOffsetY(12)
+    .simultaneousWithExternalGesture(nativeScroll)
     .onUpdate((e) => {
+      if (scrollY.value > 1) return;
       drag.value = Math.max(0, e.translationY);
     })
     .onEnd((e) => {
+      const pulled = drag.value;
       drag.value = withSpring(0, SPRING);
-      if (drag.value > CLOSE_DISTANCE || e.velocityY > CLOSE_VELOCITY) {
+      if (
+        pulled > CLOSE_DISTANCE ||
+        (pulled > 0 && e.velocityY > CLOSE_VELOCITY)
+      ) {
         scheduleOnRN(collapse);
       }
     });
+  const expandedScroll = { onScroll, gesture: nativeScroll };
 
   const origin = active?.origin ?? dest;
 
@@ -278,7 +316,9 @@ function Overlay({
                 expandedStyle,
               ]}
             >
-              <Tile def={def} expanded />
+              <ExpandedScrollContext.Provider value={expandedScroll}>
+                <Tile def={def} expanded />
+              </ExpandedScrollContext.Provider>
             </Animated.View>
           </Animated.View>
         </GestureDetector>

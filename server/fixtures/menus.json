@@ -1,0 +1,45 @@
+{
+  "updated": "2026-09-11",
+  "source": "fixture",
+  "note": "Sample menus behind the menu seam (PLAN.md Phase 4). The Go scraper replaces this hourly once the dining vendor's site is configured; see docs/WIRING.md. Keys are venue IDs from venues.json, then meal names from that venue's meals.",
+  "halls": {
+    "sherman": {
+      "Breakfast": [
+        { "station": "Grill", "items": ["Scrambled eggs", "Turkey sausage", "Home fries"] },
+        { "station": "Bakery", "items": ["Bagels", "Blueberry muffins", "Oatmeal"] }
+      ],
+      "Lunch": [
+        { "station": "Home Zone", "items": ["Chicken parmesan", "Penne marinara", "Roasted broccoli"] },
+        { "station": "Deli", "items": ["Build your own sandwich", "Tomato soup"] },
+        { "station": "Kosher", "items": ["Falafel plate", "Israeli salad", "Rice pilaf"] }
+      ],
+      "Dinner": [
+        { "station": "Home Zone", "items": ["Herb roasted chicken", "Mashed potatoes", "Green beans"] },
+        { "station": "Pizza", "items": ["Cheese", "Pepperoni", "Margherita"] },
+        { "station": "Kosher", "items": ["Beef brisket", "Roasted carrots", "Challah"] }
+      ],
+      "Brunch": [
+        { "station": "Grill", "items": ["Pancakes", "Bacon", "Hash browns"] },
+        { "station": "Omelet bar", "items": ["Made to order"] }
+      ]
+    },
+    "usdan": {
+      "Breakfast": [
+        { "station": "Grill", "items": ["Eggs any style", "Chicken sausage", "Waffles"] }
+      ],
+      "Lunch": [
+        { "station": "Global", "items": ["Chicken tikka masala", "Basmati rice", "Naan"] },
+        { "station": "Salad bar", "items": ["Greens, toppings, dressings"] },
+        { "station": "Grill", "items": ["Burgers", "Veggie burgers", "Fries"] }
+      ],
+      "Dinner": [
+        { "station": "Global", "items": ["Beef stir fry", "Tofu stir fry", "Jasmine rice"] },
+        { "station": "Pasta", "items": ["Fettuccine alfredo", "Garlic bread"] },
+        { "station": "Grill", "items": ["Grilled cheese", "Tomato soup"] }
+      ],
+      "Brunch": [
+        { "station": "Grill", "items": ["French toast", "Sausage", "Fruit"] }
+      ]
+    }
+  }
+}
