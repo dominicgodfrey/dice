@@ -1,5 +1,5 @@
 import type { Machine } from "../../sources/types";
-import { countMachines, countsLine, machineLabel } from "./laundry";
+import { countMachines, countsLine, machineLabel, systemDown } from "./laundry";
 
 const m = (
   type: Machine["type"],
@@ -51,6 +51,18 @@ describe("countsLine", () => {
     );
   });
 
+  it("says when every machine is broken", () => {
+    expect(
+      countsLine(
+        countMachines([
+          m("washer", "out_of_order"),
+          m("dryer", "out_of_order"),
+        ]),
+      ),
+    ).toBe("All out of order");
+    expect(countsLine(countMachines([]))).toBe("All out of order");
+  });
+
   it("says when the room is not reporting", () => {
     expect(
       countsLine(
@@ -62,6 +74,30 @@ describe("countsLine", () => {
         countMachines([m("washer", "offline"), m("dryer", "available")]),
       ),
     ).toBe("No washers · 1 dryer free");
+  });
+});
+
+describe("systemDown", () => {
+  const building = (...machines: Machine[]) => ({
+    id: "b",
+    name: "B",
+    rooms: [{ id: "r", name: "R", machines }],
+  });
+  it("is down only when nothing anywhere reports a working machine", () => {
+    expect(systemDown([building(m("washer", "offline"))])).toBe(true);
+    expect(
+      systemDown([
+        building(m("washer", "offline")),
+        building(m("dryer", "out_of_order")),
+      ]),
+    ).toBe(true);
+    expect(
+      systemDown([
+        building(m("washer", "offline")),
+        building(m("dryer", "in_use", 4)),
+      ]),
+    ).toBe(false);
+    expect(systemDown([])).toBe(false);
   });
 });
 

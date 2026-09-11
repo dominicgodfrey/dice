@@ -23,7 +23,7 @@ Two codebases in one repo:
 ## Where things stand
 
 Every build phase in PLAN.md section 3 is done (Phases 0–5), plus a design
-pass and a scraping pass. 42 numbered decisions, D1–D42, all in PLAN.md
+pass and a scraping pass. 43 numbered decisions, D1–D43, all in PLAN.md
 with the alternative each beat. What remains is in WIRING.md (owner
 steps) and Phase 6 (asks that need a person).
 
@@ -37,7 +37,7 @@ a "Sample data" label. Deploying the server is what turns the tiles live.
 |---|---|---|
 | Hours | dining site hours page + LibCal, scraped | today's hours arrive as dated exceptions on the venues |
 | Food | dining hall pages, scraped hourly | today's meal periods come with them |
-| Laundry | LaundryView JSON, every 90s | all 24 Brandeis rooms |
+| Laundry | LaundryView JSON, every 90s | all 24 Brandeis rooms; the preference is one room (D43) |
 | BranVan | fixture only | TripShot has no public feed; GTFS-RT parser is built and tested on MBTA |
 | Events | CampusGroups + academic ICS, hourly | ~1,900 events |
 | Sky | on-device astronomy | star chart, compass, optional GPS |
@@ -101,8 +101,9 @@ with `AUTH_ECHO_LINKS=1` and the Account page shows the link.
   saved page and the parser together. Every feed falls back to its
   fixture on failure, so a broken scraper is stale data, not a blank tile.
 - **Preferences are one versioned object** (`src/preferences/schema.ts`,
-  version 1). Add a field with a default; bump the version only when a
-  stored shape has to change, and add a migration step.
+  version 2). Add a field with a default; bump the version only when a
+  stored shape has to change, and add a migration step (v1 → v2 is the
+  example: `laundryBuilding` became `laundryRoom`).
 
 ## Map of the code
 

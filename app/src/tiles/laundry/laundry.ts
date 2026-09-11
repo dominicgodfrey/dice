@@ -49,11 +49,21 @@ export function countBuilding(b: LaundryBuilding): Counts {
   return countMachines(b.rooms.flatMap((r) => r.machines));
 }
 
-/** "3 washers · 1 dryer free", "No washers · 2 dryers free", or
- * "Not reporting" when every working machine is in a room that is offline. */
+/** True when no room anywhere has a machine free or running: the vendor's
+ * system is down, not every machine on campus. */
+export function systemDown(buildings: readonly LaundryBuilding[]): boolean {
+  const all = buildings.flatMap((b) => b.rooms.flatMap((r) => r.machines));
+  return (
+    all.length > 0 &&
+    all.every((m) => m.status === "offline" || m.status === "out_of_order")
+  );
+}
+
+/** "3 washers · 1 dryer free", "No washers · 2 dryers free"; when nothing
+ * works, "Not reporting" if the room is offline, else "All out of order". */
 export function countsLine(c: Counts): string {
-  if (c.washers === 0 && c.dryers === 0 && c.offline > 0)
-    return "Not reporting";
+  if (c.washers === 0 && c.dryers === 0)
+    return c.offline > 0 ? "Not reporting" : "All out of order";
   const w =
     c.washersFree === 0
       ? "No washers"

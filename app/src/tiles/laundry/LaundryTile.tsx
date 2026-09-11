@@ -1,11 +1,17 @@
-// Laundry tile (PLAN.md D18): the student's building as a grid of machines
-// collapsed; every building with per-machine state expanded. The building
-// is asked for on the first expand and is a preference.
+// Laundry tile (PLAN.md D18): the student's room as a grid of machines
+// collapsed; every room with per-machine state expanded. The room (one
+// building's laundry on LaundryView) is asked for on the first expand and is
+// a preference. When nothing on campus reports, LaundryView itself is down
+// and the tile says so instead of calling every machine broken.
 
 import { Pressable, StyleSheet, View } from "react-native";
 import { usePreferences } from "../../preferences/store";
 import { originLabel, useSources } from "../../sources/SourcesProvider";
-import type { LaundryBuilding, Machine } from "../../sources/types";
+import type {
+  LaundryBuilding,
+  LaundryRoom,
+  Machine,
+} from "../../sources/types";
 import { Text } from "../../ui/Text";
 import { colors, space, type } from "../../ui/theme";
 import {
@@ -16,18 +22,26 @@ import {
   t,
   TileButton,
 } from "../shells";
-import { countBuilding, countsLine, machineLabel } from "./laundry";
+import { countMachines, countsLine, machineLabel, systemDown } from "./laundry";
 
-function useBuilding(): LaundryBuilding | null {
+type Found = { room: LaundryRoom; building: LaundryBuilding };
+
+function useRoom(): Found | null {
   const { laundry } = useSources();
   const { prefs } = usePreferences();
-  return (
-    laundry.data.buildings.find((b) => b.id === prefs.laundryBuilding) ?? null
-  );
+  for (const building of laundry.data.buildings) {
+    const room = building.rooms.find((r) => r.id === prefs.laundryRoom);
+    if (room) return { room, building };
+  }
+  return null;
 }
 
+const DOWN_TITLE = "LaundryView is down";
+const DOWN_BODY =
+  "No room on campus is reporting, so this is on their end, not the machines. Check in person.";
+
 /** One shape per machine: washers round, dryers square; filled when free,
- * outlined with minutes when busy, dashed when broken. */
+ * outlined with minutes when busy, dashed when broken or not reporting. */
 function MachineGrid({
   machines,
   size = 30,
@@ -40,7 +54,7 @@ function MachineGrid({
       {machines.map((m, i) => {
         const free = m.status === "available";
         const broken = m.status === "out_of_order" || m.status === "offline";
-        // IDs repeat across a building's rooms ("01" in every room).
+        // IDs repeat across rooms ("01" in every room).
         return (
           <View
             key={i}
@@ -69,89 +83,118 @@ function MachineGrid({
 }
 
 export function LaundryCollapsed() {
-  const building = useBuilding();
-  if (!building) {
+  const { laundry } = useSources();
+  const found = useRoom();
+  if (systemDown(laundry.data.buildings)) {
+    return (
+      <CollapsedShell title="Laundry" icon="droplet">
+        <Text style={t.bodyStrong}>{DOWN_TITLE}</Text>
+        <Text style={t.muted}>Nothing on campus is reporting</Text>
+      </CollapsedShell>
+    );
+  }
+  if (!found) {
     return (
       <CollapsedShell title="Laundry" icon="droplet">
         <Text style={t.body}>Pick your building</Text>
       </CollapsedShell>
     );
   }
-  const c = countBuilding(building);
-  const machines = building.rooms.flatMap((r) => r.machines);
+  const { room, building } = found;
+  const c = countMachines(room.machines);
   // Shapiro has 30 machines; shrink the shapes so the counts line stays.
-  const n = machines.length;
+  const n = room.machines.length;
   const size = n <= 8 ? 26 : n <= 16 ? 18 : 12;
   return (
     <CollapsedShell title="Laundry" icon="droplet">
-      <MachineGrid machines={machines} size={size} />
+      <MachineGrid machines={room.machines} size={size} />
       <Text style={[t.bodyStrong, { marginTop: 8 }]} numberOfLines={1}>
         {countsLine(c)}
       </Text>
       <Text style={t.muted} numberOfLines={1}>
-        {building.name}
+        {room.name} · {building.name}
       </Text>
     </CollapsedShell>
+  );
+}
+
+function RoomChoice({
+  room,
+  onPress,
+}: {
+  room: LaundryRoom;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
+    >
+      <View style={{ flex: 1 }}>
+        <Text style={t.bodyStrong}>{room.name}</Text>
+        <Text style={t.muted}>{countsLine(countMachines(room.machines))}</Text>
+      </View>
+      <View style={styles.choiceGrid}>
+        <MachineGrid machines={room.machines} size={16} />
+      </View>
+    </Pressable>
   );
 }
 
 export function LaundryExpanded() {
   const { laundry } = useSources();
   const { update } = usePreferences();
-  const building = useBuilding();
+  const found = useRoom();
+  const buildings = laundry.data.buildings;
+  const downNote = systemDown(buildings) ? (
+    <View style={styles.note}>
+      <Text style={t.bodyStrong}>{DOWN_TITLE}</Text>
+      <Text style={t.muted}>{DOWN_BODY}</Text>
+    </View>
+  ) : null;
 
-  if (!building) {
+  if (!found) {
     return (
       <ExpandedShell title="Laundry" subtitle="Which building do you live in?">
-        <View style={{ marginTop: space.md }}>
-          {laundry.data.buildings.map((b) => (
-            <Pressable
-              key={b.id}
-              accessibilityRole="button"
-              onPress={() => update({ laundryBuilding: b.id })}
-              style={({ pressed }) => [
-                styles.choice,
-                pressed && styles.pressed,
-              ]}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={t.bodyStrong}>{b.name}</Text>
-                <Text style={t.muted}>{countsLine(countBuilding(b))}</Text>
-              </View>
-              <View style={styles.choiceGrid}>
-                <MachineGrid
-                  machines={b.rooms.flatMap((r) => r.machines)}
-                  size={16}
-                />
-              </View>
-            </Pressable>
-          ))}
-        </View>
+        {downNote}
+        {buildings.map((b) => (
+          <Section key={b.id} title={b.name}>
+            {b.rooms.map((r) => (
+              <RoomChoice
+                key={r.id}
+                room={r}
+                onPress={() => update({ laundryRoom: r.id })}
+              />
+            ))}
+          </Section>
+        ))}
       </ExpandedShell>
     );
   }
 
-  const c = countBuilding(building);
-  const others = laundry.data.buildings.filter((b) => b.id !== building.id);
+  const { room, building } = found;
+  const c = countMachines(room.machines);
   return (
     <ExpandedShell title="Laundry" subtitle={originLabel(laundry)}>
-      <Text style={[t.heading, { marginTop: space.lg }]}>{building.name}</Text>
-      <Text style={t.muted}>{countsLine(c)}</Text>
-      {building.rooms.map((room) => (
-        <Section key={room.id} title={room.name}>
-          <MachineGrid machines={room.machines} />
-          <View style={{ marginTop: space.sm }}>
-            {room.machines.map((m) => (
-              <Row
-                key={m.id}
-                left={`${m.type === "washer" ? "Washer" : "Dryer"} ${m.id.replace(/^[wd]/, "")}`}
-                right={machineLabel(m)}
-                strong={m.status === "available"}
-              />
-            ))}
-          </View>
-        </Section>
-      ))}
+      {downNote}
+      <Text style={[t.heading, { marginTop: space.lg }]}>{room.name}</Text>
+      <Text style={t.muted}>
+        {building.name} · {countsLine(c)}
+      </Text>
+      <View style={{ marginTop: space.md }}>
+        <MachineGrid machines={room.machines} />
+      </View>
+      <View style={{ marginTop: space.sm }}>
+        {room.machines.map((m, i) => (
+          <Row
+            key={i}
+            left={`${m.type === "washer" ? "Washer" : "Dryer"} ${m.id.replace(/^[wd]/, "")}`}
+            right={machineLabel(m)}
+            strong={m.status === "available"}
+          />
+        ))}
+      </View>
       {c.washersFree === 0 && c.nextWasher !== null ? (
         <Text style={[t.muted, { marginTop: space.md }]}>
           Next washer free in about {c.nextWasher} min.
@@ -160,19 +203,22 @@ export function LaundryExpanded() {
       <TileButton
         icon="home"
         label="Change building"
-        onPress={() => update({ laundryBuilding: null })}
+        onPress={() => update({ laundryRoom: null })}
       />
-      {others.length ? (
-        <Section title="Other buildings">
-          {others.map((b) => (
-            <Row
-              key={b.id}
-              left={b.name}
-              right={countsLine(countBuilding(b))}
-            />
-          ))}
-        </Section>
-      ) : null}
+      {buildings.map((b) => {
+        const others = b.rooms.filter((r) => r.id !== room.id);
+        return others.length ? (
+          <Section key={b.id} title={b.name}>
+            {others.map((r) => (
+              <Row
+                key={r.id}
+                left={r.name}
+                right={countsLine(countMachines(r.machines))}
+              />
+            ))}
+          </Section>
+        ) : null;
+      })}
     </ExpandedShell>
   );
 }
@@ -197,10 +243,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: space.md,
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.onDarkLine,
   },
   choiceGrid: { flexShrink: 1, maxWidth: "45%" },
+  note: {
+    marginTop: space.lg,
+    padding: space.md,
+    borderRadius: 12,
+    backgroundColor: colors.onDarkFill,
+  },
   pressed: { opacity: 0.7 },
 });

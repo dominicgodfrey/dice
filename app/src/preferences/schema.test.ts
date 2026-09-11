@@ -19,6 +19,18 @@ describe("migrate", () => {
     });
     expect(result.order).toEqual(["laundry", "food"]);
     expect(result.hidden).toEqual([]);
-    expect(result.laundryBuilding).toBeNull();
+    expect(result.laundryRoom).toBeNull();
+  });
+
+  it("brings v1 forward, dropping the quad-level laundry choice", () => {
+    const result = migrate({
+      version: 1,
+      order: ["food"],
+      laundryBuilding: "massell",
+    });
+    expect(result.version).toBe(PREFERENCES_VERSION);
+    expect(result.order).toEqual(["food"]);
+    expect(result.laundryRoom).toBeNull();
+    expect("laundryBuilding" in result).toBe(false);
   });
 });

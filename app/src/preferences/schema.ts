@@ -1,8 +1,11 @@
-// Preferences v1 (PLAN.md D19, D31). One versioned object; every tile reads
+// Preferences v2 (PLAN.md D19, D31). One versioned object; every tile reads
 // its slice. Add a field here and a migration step in `migrate` when the
 // version bumps.
+//
+// v1 -> v2: `laundryBuilding` (a quad) became `laundryRoom` (one room on
+// LaundryView, which is the building a student actually lives in).
 
-export const PREFERENCES_VERSION = 1;
+export const PREFERENCES_VERSION = 2;
 
 export type Preferences = {
   version: typeof PREFERENCES_VERSION;
@@ -13,7 +16,8 @@ export type Preferences = {
   /** Search entry IDs promoted to link tiles. */
   promoted: string[];
   followedVenues: string[];
-  laundryBuilding: string | null;
+  /** LaundryView room ID; a room is one building's laundry. */
+  laundryRoom: string | null;
   homeStop: string | null;
   /** Has the first-launch gallery been shown (D11)? */
   onboarded: boolean;
@@ -27,7 +31,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   hidden: [],
   promoted: [],
   followedVenues: [],
-  laundryBuilding: null,
+  laundryRoom: null,
   homeStop: null,
   onboarded: false,
   colors: {},
@@ -39,7 +43,15 @@ export const DEFAULT_PREFERENCES: Preferences = {
  */
 export function migrate(stored: unknown): Preferences {
   if (typeof stored !== "object" || stored === null) return DEFAULT_PREFERENCES;
-  const candidate = stored as Partial<Preferences>;
+  const candidate = stored as Partial<Omit<Preferences, "version">> & {
+    version?: number;
+    laundryBuilding?: unknown;
+  };
+  if (candidate.version === 1) {
+    // A quad is not a room; ask again rather than guess.
+    const { laundryBuilding: _dropped, ...rest } = candidate;
+    return { ...DEFAULT_PREFERENCES, ...rest, version: PREFERENCES_VERSION };
+  }
   if (candidate.version === PREFERENCES_VERSION) {
     return {
       ...DEFAULT_PREFERENCES,

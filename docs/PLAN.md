@@ -338,6 +338,15 @@ a curved number line; the previous "Day · Sunrise 6:20 AM · Sunset 7:01 PM"
 line said the same thing without showing where in the day you are.
 Computed on device from the campus coordinate like the rest of D17.
 
+**D43. The laundry preference is a room, not a quad.** *Revises D18.*
+LaundryView groups Brandeis into campuses ("Massell Quad") of rooms
+("Shapiro Hall"); a student lives in a building and only that building's
+machines matter. The picker lists rooms under their quad headings, the
+collapsed tile shows one room, and preferences moved to version 2 with the
+old quad choice dropped rather than guessed at. When no room on campus
+reports a single working machine the tile says LaundryView is down, since
+that is what it means: the vendor's system, not every machine at once.
+
 ## 2. Things that need access, and the seam each stops at
 
 | Feature | Who to ask | What is built without them | What their answer unlocks |
