@@ -18,6 +18,8 @@ export const colors = {
   onDarkFaint: "rgba(255,255,255,0.45)",
   onDarkLine: "rgba(255,255,255,0.18)",
   onDarkFill: "rgba(255,255,255,0.12)",
+  /** The big icon behind a collapsed tile. */
+  onDarkWatermark: "rgba(255,255,255,0.13)",
 };
 
 /** Tile colours. All deep enough for white text. */

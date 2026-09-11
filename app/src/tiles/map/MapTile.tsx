@@ -22,7 +22,7 @@ export function MapCollapsed() {
   const { campus } = useSources();
   const [box, setBox] = useState({ w: 0, h: 0 });
   return (
-    <CollapsedShell title="Map" icon="map">
+    <CollapsedShell title="Map" icon="map" art={false}>
       <View
         style={styles.fill}
         onLayout={(e) =>

@@ -355,6 +355,13 @@ close" from "scroll up", so the gesture that always works is the one the
 scroll never wants: right. The owner's ask was to be able to leave a tile
 regardless of how much you have scrolled or tapped inside it.
 
+**D45. Collapsed tiles carry their icon large and faint in the corner.**
+A new student should tell tiles apart before reading them. The same
+Feather icon from the tile's header, at 72px and 13% white, top right,
+under the content. Tiles whose content is already a picture (the map's
+imagery, the sky's star chart) turn it off. Bespoke illustrations per tile
+were the alternative; one rule in the shell keeps D37's restraint.
+
 ## 2. Things that need access, and the seam each stops at
 
 | Feature | Who to ask | What is built without them | What their answer unlocks |

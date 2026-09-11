@@ -23,7 +23,7 @@ Two codebases in one repo:
 ## Where things stand
 
 Every build phase in PLAN.md section 3 is done (Phases 0–5), plus a design
-pass and a scraping pass. 44 numbered decisions, D1–D44, all in PLAN.md
+pass and a scraping pass. 45 numbered decisions, D1–D45, all in PLAN.md
 with the alternative each beat. What remains is in WIRING.md (owner
 steps) and Phase 6 (asks that need a person).
 
@@ -52,6 +52,10 @@ press, hide, live drag, cancel; colour picker; gallery and onboarding;
 search, chips, adding a link; emergency confirm sheet; bug report end to
 end against the local server; sign-in end to end with a synced preference;
 all scrapers against the live sites; the web export.
+
+Verified in the browser on 2026-09-11 (second session): the header arc
+by day; the room-level laundry picker; swipe right to close and swipe down
+from the handle after scrolling; the collapsed watermarks.
 
 Never run on a real device: swipe-to-close over scrolling content, the
 compass, GPS, pinch on the map, native builds of any kind. The owner has

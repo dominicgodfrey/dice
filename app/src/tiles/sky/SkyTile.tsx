@@ -36,7 +36,7 @@ export function SkyCollapsed() {
   const [box, setBox] = useState({ w: 0, h: 0 });
   const size = Math.max(0, Math.min(box.w, box.h - 44));
   return (
-    <CollapsedShell title="Sky" icon="moon">
+    <CollapsedShell title="Sky" icon="moon" art={false}>
       <View
         style={styles.collapsedBody}
         onLayout={(e) =>

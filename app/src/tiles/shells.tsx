@@ -1,6 +1,8 @@
 // The two frames every tile's content sits in: the collapsed square with an
-// icon and a small title at the top, and the expanded page with grabber,
-// title, source line, and a scroll that cooperates with swipe-to-close.
+// icon and a small title at the top and the same icon large and faint in the
+// corner so a new student can tell tiles apart at a glance, and the expanded
+// page with grabber, title, source line, and a scroll that cooperates with
+// swipe-to-close.
 
 import type { ReactNode } from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
@@ -17,14 +19,22 @@ import { colors, space, type } from "../ui/theme";
 export function CollapsedShell({
   title,
   icon,
+  art = true,
   children,
 }: {
   title: string;
   icon: IconName;
+  /** Off for tiles whose content is already a picture (map, sky). */
+  art?: boolean;
   children: ReactNode;
 }) {
   return (
     <View style={styles.collapsed}>
+      {art ? (
+        <View style={styles.watermark} pointerEvents="none">
+          <Icon name={icon} size={72} color={colors.onDarkWatermark} />
+        </View>
+      ) : null}
       <View style={styles.collapsedHead}>
         <Icon name={icon} size={15} color={colors.onDarkMuted} />
         <Text style={styles.collapsedTitle}>{title}</Text>
@@ -167,7 +177,8 @@ export const t = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  collapsed: { flex: 1, padding: space.lg },
+  collapsed: { flex: 1, padding: space.lg, overflow: "hidden" },
+  watermark: { position: "absolute", top: 6, right: 10 },
   collapsedHead: { flexDirection: "row", alignItems: "center", gap: 6 },
   collapsedTitle: {
     ...type.small,
