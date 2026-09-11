@@ -100,7 +100,6 @@ func (f *VenuesFeed) Build(ctx context.Context) ([]byte, error) {
 			ex := exception{Date: today, Note: "From brandeishospitality.com"}
 			var meals []meal
 			seenRange := map[[2]string]bool{}
-			seenMeal := map[meal]bool{}
 			for _, p := range periods {
 				r := [2]string{scrape.HHMM(p.Open, f.Loc), scrape.HHMM(p.Close, f.Loc)}
 				// Two pages for one hall (Sherman's kosher and farm tables)
@@ -110,10 +109,19 @@ func (f *VenuesFeed) Build(ctx context.Context) ([]byte, error) {
 					ex.Hours = append(ex.Hours, r)
 				}
 				if p.Label != "" && !strings.EqualFold(p.Label, "open") {
-					m := meal{Name: p.Label, Start: r[0], End: r[1]}
-					if !seenMeal[m] {
-						seenMeal[m] = true
-						meals = append(meals, m)
+					// One meal is listed as several sittings (Sherman's brunch
+					// has three); the tile wants its whole span once.
+					merged := false
+					for i := range meals {
+						if meals[i].Name == p.Label {
+							meals[i].Start = min(meals[i].Start, r[0])
+							meals[i].End = max(meals[i].End, r[1])
+							merged = true
+							break
+						}
+					}
+					if !merged {
+						meals = append(meals, meal{Name: p.Label, Start: r[0], End: r[1]})
 					}
 				}
 			}
@@ -218,7 +226,7 @@ func (f *MenusFeed) Build(ctx context.Context) ([]byte, error) {
 				halls[venue] = map[string][]scrape.Station{}
 			}
 			for _, m := range meals {
-				halls[venue][m.Meal] = append(halls[venue][m.Meal], m.Stations...)
+				halls[venue][m.Meal] = mergeStations(halls[venue][m.Meal], m.Stations)
 			}
 		}
 	}
@@ -231,6 +239,36 @@ func (f *MenusFeed) Build(ctx context.Context) ([]byte, error) {
 		"date":    today,
 		"halls":   halls,
 	})
+}
+
+// mergeStations appends stations, folding one whose name is already present
+// into it: a location page lists a station once per sitting of the same
+// meal, and two pages of one hall can share a station.
+func mergeStations(into []scrape.Station, add []scrape.Station) []scrape.Station {
+	for _, s := range add {
+		i := -1
+		for j := range into {
+			if into[j].Station == s.Station {
+				i = j
+				break
+			}
+		}
+		if i < 0 {
+			into = append(into, scrape.Station{Station: s.Station, Items: append([]string(nil), s.Items...)})
+			continue
+		}
+		seen := map[string]bool{}
+		for _, it := range into[i].Items {
+			seen[it] = true
+		}
+		for _, it := range s.Items {
+			if !seen[it] {
+				into[i].Items = append(into[i].Items, it)
+				seen[it] = true
+			}
+		}
+	}
+	return into
 }
 
 func MenusScrape(loc *time.Location) *refresh.Cache[[]byte] {

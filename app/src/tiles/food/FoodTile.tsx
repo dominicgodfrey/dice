@@ -1,12 +1,16 @@
 // Food tile (PLAN.md D16): one headline per dining hall for the current
-// meal, with how far through it we are; expanded, each hall's meals with
-// stations and items, and the Grubhub link.
+// meal, with how far through it we are, and a line saying the menu is a tap
+// away. Expanded, each hall as a menu: pick a meal, read its stations with
+// the dishes laid out to scan rather than a comma list; and the Grubhub link.
 
-import { Linking, StyleSheet, View } from "react-native";
+import { useState } from "react";
+import { Linking, Pressable, StyleSheet, View } from "react-native";
 import { originLabel, useSources } from "../../sources/SourcesProvider";
 import { ENTRY_BY_ID } from "../../search/entries";
+import type { Meal, MenuStation, Venue } from "../../sources/types";
+import { Icon } from "../../ui/Icon";
 import { Text } from "../../ui/Text";
-import { colors, space } from "../../ui/theme";
+import { colors, space, type } from "../../ui/theme";
 import { atClock, formatClock } from "../../util/time";
 import { useNow } from "../../util/useNow";
 import {
@@ -62,7 +66,95 @@ export function FoodCollapsed() {
           </View>
         );
       })}
+      <View style={styles.menuHint}>
+        <Icon name="book-open" size={14} color={colors.onDarkMuted} />
+        <Text style={t.muted}>Today&rsquo;s menus</Text>
+        <Icon name="chevron-right" size={14} color={colors.onDarkMuted} />
+      </View>
     </CollapsedShell>
+  );
+}
+
+/** One hall's menu: a row of meals to pick from, then that meal's stations. */
+function HallMenu({
+  hall,
+  now,
+  stationsFor,
+}: {
+  hall: Venue;
+  now: Date;
+  stationsFor: (meal: Meal) => MenuStation[];
+}) {
+  const meals = mealsOn(hall, now);
+  const current = mealAt(hall, now);
+  const currentName =
+    current.state === "now" || current.state === "next"
+      ? current.meal.name
+      : null;
+  const [picked, setPicked] = useState<string | null>(null);
+  const shown =
+    meals.find((m) => m.name === picked) ??
+    meals.find((m) => m.name === currentName) ??
+    meals[0];
+  const stations = shown ? stationsFor(shown) : [];
+  return (
+    <Section title={hall.name}>
+      <Text style={t.bodyStrong}>{mealLine(current)}</Text>
+      {meals.length > 1 ? (
+        <View style={styles.tabs}>
+          {meals.map((m, i) => {
+            const on = shown?.name === m.name;
+            return (
+              <Pressable
+                key={`${m.name}-${i}`}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: on }}
+                onPress={() => setPicked(m.name)}
+                style={({ pressed }) => [
+                  styles.tab,
+                  on && styles.tabOn,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={[styles.tabLabel, on && styles.tabLabelOn]}>
+                  {m.name}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+      {shown ? (
+        <View style={styles.menu}>
+          <View style={styles.menuHead}>
+            <Text style={t.heading}>{shown.name}</Text>
+            <Text style={t.muted}>
+              {formatClock(atClock(now, shown.start))} –{" "}
+              {formatClock(atClock(now, shown.end))}
+            </Text>
+          </View>
+          {stations.length === 0 ? (
+            <Text style={t.muted}>Menu not posted yet</Text>
+          ) : (
+            stations.map((s, i) => (
+              // Station names repeat within a meal on the source pages.
+              <View key={`${s.station}-${i}`} style={styles.station}>
+                <Text style={styles.stationName}>{s.station}</Text>
+                <View style={styles.dishes}>
+                  {s.items.map((item, j) => (
+                    <View key={`${item}-${j}`} style={styles.dish}>
+                      <Text style={styles.dishText}>{item}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+      ) : (
+        <Text style={[t.muted, { marginTop: space.sm }]}>No meals listed</Text>
+      )}
+    </Section>
   );
 }
 
@@ -72,46 +164,14 @@ export function FoodExpanded() {
   const { menus } = useSources();
   return (
     <ExpandedShell title="Food" subtitle={originLabel(menus)}>
-      {halls.map((h) => {
-        const current = mealAt(h, now);
-        const currentName =
-          current.state === "now" || current.state === "next"
-            ? current.meal.name
-            : null;
-        return (
-          <Section key={h.id} title={h.name}>
-            <Text style={t.bodyStrong}>{mealLine(current)}</Text>
-            {mealsOn(h, now).map((meal) => {
-              const stations = menus.data.halls[h.id]?.[meal.name] ?? [];
-              const isCurrent = meal.name === currentName;
-              return (
-                <View
-                  key={meal.name}
-                  style={[styles.meal, isCurrent && styles.mealCurrent]}
-                >
-                  <View style={styles.mealHead}>
-                    <Text style={t.heading}>{meal.name}</Text>
-                    <Text style={t.muted}>
-                      {formatClock(atClock(now, meal.start))} –{" "}
-                      {formatClock(atClock(now, meal.end))}
-                    </Text>
-                  </View>
-                  {stations.length === 0 ? (
-                    <Text style={t.muted}>Menu not available</Text>
-                  ) : (
-                    stations.map((s) => (
-                      <View key={s.station} style={styles.station}>
-                        <Text style={t.label}>{s.station}</Text>
-                        <Text style={t.body}>{s.items.join(" · ")}</Text>
-                      </View>
-                    ))
-                  )}
-                </View>
-              );
-            })}
-          </Section>
-        );
-      })}
+      {halls.map((h) => (
+        <HallMenu
+          key={h.id}
+          hall={h}
+          now={now}
+          stationsFor={(meal) => menus.data.halls[h.id]?.[meal.name] ?? []}
+        />
+      ))}
       {GRUBHUB && GRUBHUB.action.kind === "url" ? (
         <TileButton
           icon="external-link"
@@ -142,18 +202,49 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   fill: { height: 3, backgroundColor: colors.onDark, borderRadius: 2 },
-  meal: {
+  menuHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 10,
+  },
+  tabs: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: space.sm },
+  tab: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.onDarkFaint,
+  },
+  tabOn: { backgroundColor: colors.onDark, borderColor: colors.onDark },
+  tabLabel: { ...type.small, color: colors.onDark, fontWeight: "500" },
+  tabLabelOn: { color: colors.text },
+  menu: {
     marginTop: space.md,
     padding: space.md,
     borderRadius: 12,
     backgroundColor: "rgba(0,0,0,0.14)",
   },
-  mealCurrent: { backgroundColor: colors.onDarkFill },
-  mealHead: {
+  menuHead: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "baseline",
+    gap: 8,
+  },
+  station: { marginTop: space.md },
+  stationName: {
+    ...type.small,
+    color: colors.onDarkMuted,
+    fontWeight: "600",
     marginBottom: 6,
   },
-  station: { marginTop: 8 },
+  dishes: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  dish: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: colors.onDarkFill,
+  },
+  dishText: { ...type.small, color: colors.onDark },
+  pressed: { opacity: 0.7 },
 });

@@ -369,6 +369,15 @@ under the content. Tiles whose content is already a picture (the map's
 imagery, the sky's star chart) turn it off. Bespoke illustrations per tile
 were the alternative; one rule in the shell keeps D37's restraint.
 
+**D46. The menu reads like a menu.** *Revises D16.* Expanded, each hall
+offers its meals as a row of pills; the one that is on (or next) is
+picked, and its stations follow with the dishes as small chips to scan
+rather than a comma-joined line. The collapsed tile says "Today's
+menus" with a chevron so it is plain that tapping shows them. Two data
+faults fixed on the server at the same time: a station listed once per
+sitting of a meal now merges, and a meal listed as three sittings
+(Sherman's brunch) becomes one span, so the app never sees duplicates.
+
 ## 2. Things that need access, and the seam each stops at
 
 | Feature | Who to ask | What is built without them | What their answer unlocks |

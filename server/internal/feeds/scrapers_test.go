@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -23,7 +24,7 @@ func TestVenuesFeedMergesExceptionsAndMeals(t *testing.T) {
 			}
 			return []scrape.VenueHours{
 				{Name: "The Stein", Periods: []scrape.Period{{Label: "Open", Open: at(17, 0), Close: at(23, 0)}}},
-				{Name: "Kosher Table at Sherman", Periods: []scrape.Period{{Label: "Brunch", Open: at(9, 30), Close: at(11, 0)}}},
+				{Name: "Kosher Table at Sherman", Periods: []scrape.Period{{Label: "Brunch", Open: at(9, 30), Close: at(11, 0)}, {Label: "Brunch", Open: at(11, 0), Close: at(14, 30)}}},
 				{Name: "Farm Table at Sherman", Periods: []scrape.Period{{Label: "Dinner", Open: at(17, 0), Close: at(20, 0)}, {Label: "Brunch", Open: at(9, 30), Close: at(11, 0)}}},
 				{Name: "Starbucks", Periods: []scrape.Period{{Label: "open", Open: at(8, 0), Close: at(15, 30)}}},
 				{Name: "Unknown Cafe", Periods: []scrape.Period{{Label: "Open", Open: at(9, 0), Close: at(10, 0)}}},
@@ -75,10 +76,12 @@ func TestVenuesFeedMergesExceptionsAndMeals(t *testing.T) {
 		return nil
 	}
 	sherman := find("sherman")
-	if sherman == nil || len(sherman.Exceptions) != 1 || len(sherman.Exceptions[0].Hours) != 2 {
+	if sherman == nil || len(sherman.Exceptions) != 1 || len(sherman.Exceptions[0].Hours) != 3 {
 		t.Fatalf("sherman: %+v", sherman)
 	}
-	if sherman.Exceptions[0].Hours[0] != [2]string{"09:30", "11:00"} || sherman.TodayDate != "2026-09-11" || len(sherman.TodayMeals) != 2 {
+	if sherman.Exceptions[0].Hours[0] != [2]string{"09:30", "11:00"} || sherman.TodayDate != "2026-09-11" || len(sherman.TodayMeals) != 2 ||
+		// Three brunch sittings become one brunch.
+		sherman.TodayMeals[0] != (struct{ Name, Start, End string }{"Brunch", "09:30", "14:30"}) {
 		t.Fatalf("sherman detail: %+v", sherman)
 	}
 	stein := find("stein")
@@ -144,6 +147,23 @@ func TestMenusFeedGroupsByVenueAndMeal(t *testing.T) {
 	_ = json.Unmarshal(b, &doc)
 	if len(doc.Halls["sherman"]["Brunch"]) != 2 || doc.Halls["usdan"] != nil {
 		t.Fatalf("%+v", doc.Halls)
+	}
+}
+
+func TestMergeStationsFoldsRepeats(t *testing.T) {
+	got := mergeStations(
+		[]scrape.Station{{Station: "Grill", Items: []string{"Eggs"}}},
+		[]scrape.Station{
+			{Station: "Grill", Items: []string{"Eggs", "Bacon"}},
+			{Station: "Desserts", Items: []string{"Pie"}},
+			{Station: "Desserts", Items: []string{"Cake"}},
+		},
+	)
+	if len(got) != 2 {
+		t.Fatalf("%+v", got)
+	}
+	if strings.Join(got[0].Items, ",") != "Eggs,Bacon" || strings.Join(got[1].Items, ",") != "Pie,Cake" {
+		t.Fatalf("%+v", got)
 	}
 }
 
