@@ -2,19 +2,16 @@
 // venue by category with weekly hours expanded; follow list at the bottom.
 
 import { useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { usePreferences } from "../../preferences/store";
 import { originLabel, useSources } from "../../sources/SourcesProvider";
 import type { Venue, VenueCategory, Weekday } from "../../sources/types";
+import { Icon } from "../../ui/Icon";
+import { Text } from "../../ui/Text";
+import { colors, space } from "../../ui/theme";
 import { formatClockRange, startOfDay } from "../../util/time";
 import { useNow } from "../../util/useNow";
-import {
-  CollapsedShell,
-  ExpandedShell,
-  Row,
-  Section,
-  shellStyles,
-} from "../shells";
+import { CollapsedShell, ExpandedShell, Row, Section, t } from "../shells";
 import {
   followedIds,
   statusAt,
@@ -23,7 +20,9 @@ import {
   toggleFollowed,
 } from "./hours";
 
-const FG = "#2A1D00";
+const OPEN = "#7BE0A0";
+const CLOSED = "#FF9B8F";
+
 const CATEGORY_TITLES: Record<VenueCategory, string> = {
   dining: "Dining halls",
   cafe: "Cafés",
@@ -33,13 +32,13 @@ const CATEGORY_TITLES: Record<VenueCategory, string> = {
 };
 const WEEK: Weekday[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const WEEK_LABEL: Record<Weekday, string> = {
-  mon: "Mon",
-  tue: "Tue",
-  wed: "Wed",
-  thu: "Thu",
-  fri: "Fri",
-  sat: "Sat",
-  sun: "Sun",
+  mon: "Monday",
+  tue: "Tuesday",
+  wed: "Wednesday",
+  thu: "Thursday",
+  fri: "Friday",
+  sat: "Saturday",
+  sun: "Sunday",
 };
 
 function useFollowedVenues(now: Date) {
@@ -58,19 +57,19 @@ export function HoursCollapsed() {
   const now = useNow(30_000);
   const rows = useFollowedVenues(now).slice(0, 3);
   return (
-    <CollapsedShell title="Hours" fg={FG}>
+    <CollapsedShell title="Hours" icon="clock">
       {rows.map(({ venue, status }) => (
         <View key={venue.id} style={styles.line}>
           <View
             style={[
               styles.dot,
-              { backgroundColor: status.open ? "#1E8E3E" : "#B3261E" },
+              { backgroundColor: status.open ? OPEN : CLOSED },
             ]}
           />
-          <Text style={[shellStyles.line, styles.name]} numberOfLines={1}>
-            {venue.name}
+          <Text style={[t.bodyStrong, styles.name]} numberOfLines={1}>
+            {venue.name.replace(" Dining Hall", "")}
           </Text>
-          <Text style={[shellStyles.small, styles.when]} numberOfLines={1}>
+          <Text style={t.muted} numberOfLines={1}>
             {statusLabel(status, now)}
           </Text>
         </View>
@@ -96,40 +95,41 @@ export function HoursExpanded() {
     byCategory.set(item.venue.category, list);
   }
   const today = startOfDay(now);
+  const todayKey = WEEK[(today.getDay() + 6) % 7];
 
   return (
-    <ExpandedShell title="Hours" subtitle={originLabel(venues)} fg={FG}>
+    <ExpandedShell title="Hours" subtitle={originLabel(venues)}>
       {[...byCategory.entries()].map(([category, items]) => (
-        <Section key={category} title={CATEGORY_TITLES[category]} fg={FG}>
+        <Section key={category} title={CATEGORY_TITLES[category]}>
           {items.map(({ venue, status }) => (
             <View key={venue.id} style={styles.venue}>
               <View style={styles.venueHead}>
-                <Text style={[shellStyles.big, { color: FG }]}>
-                  {venue.name}
-                </Text>
+                <View style={styles.venueTitle}>
+                  <View
+                    style={[
+                      styles.dot,
+                      { backgroundColor: status.open ? OPEN : CLOSED },
+                    ]}
+                  />
+                  <Text style={t.heading}>{venue.name}</Text>
+                </View>
                 <Text
                   style={[
-                    shellStyles.line,
-                    {
-                      color: status.open ? "#1E8E3E" : "#B3261E",
-                      fontWeight: "700",
-                    },
+                    t.small,
+                    { color: status.open ? OPEN : CLOSED, fontWeight: "600" },
                   ]}
                 >
-                  {status.open ? "Open" : "Closed"} · {statusLabel(status, now)}
+                  {statusLabel(status, now)}
                 </Text>
               </View>
-              <Text style={[shellStyles.small, styles.location]}>
-                {venue.location}
-              </Text>
+              <Text style={[t.muted, styles.location]}>{venue.location}</Text>
               {WEEK.map((d) => {
                 const ranges = venue.hours[d] ?? [];
                 return (
                   <Row
                     key={d}
-                    fg={FG}
                     left={WEEK_LABEL[d]}
-                    strong={d === WEEK[(today.getDay() + 6) % 7]}
+                    strong={d === todayKey}
                     right={
                       ranges.length
                         ? ranges
@@ -144,7 +144,7 @@ export function HoursExpanded() {
           ))}
         </Section>
       ))}
-      <Section title="Follow" fg={FG}>
+      <Section title="Follow">
         {venues.data.venues.map((v) => {
           const on = followedSet.has(v.id);
           return (
@@ -158,14 +158,12 @@ export function HoursExpanded() {
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={[shellStyles.line, { color: FG, flex: 1 }]}>
-                {v.name}
-              </Text>
-              <Text
-                style={[shellStyles.small, { color: FG, fontWeight: "700" }]}
-              >
-                {on ? "Following" : "Follow"}
-              </Text>
+              <View style={[styles.check, on && styles.checkOn]}>
+                {on ? (
+                  <Icon name="check" size={13} color={colors.text} />
+                ) : null}
+              </View>
+              <Text style={[t.body, { flex: 1 }]}>{v.name}</Text>
             </Pressable>
           );
         })}
@@ -182,22 +180,32 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  name: { flex: 1, color: FG, fontWeight: "600" },
-  when: { color: FG, opacity: 0.8 },
-  venue: { marginBottom: 20 },
+  name: { flex: 1 },
+  venue: { marginBottom: space.xl },
   venueHead: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-end",
+    alignItems: "center",
     flexWrap: "wrap",
     gap: 8,
   },
-  location: { color: FG, opacity: 0.7, marginBottom: 6 },
+  venueTitle: { flexDirection: "row", alignItems: "center", gap: 8 },
+  location: { marginBottom: 6, marginTop: 2 },
   follow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
-    gap: 12,
+    paddingVertical: 9,
+    gap: space.md,
   },
+  check: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: colors.onDarkFaint,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkOn: { backgroundColor: colors.onDark, borderColor: colors.onDark },
   pressed: { opacity: 0.6 },
 });

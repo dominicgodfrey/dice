@@ -15,6 +15,9 @@
 //	                    replace the fixture's; routes and stops still come
 //	                    from the fixture, so stop and route IDs must match.
 //	                    Refreshed every 30 seconds.
+//	SHUTTLE_GTFS_RT_VEHICLES_URL
+//	                    the matching VehiclePositions feed, for the vans on
+//	                    the map. Optional.
 package feeds
 
 import (
@@ -22,6 +25,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"sort"
 	"strings"
@@ -151,8 +155,9 @@ func Menus(url string) *refresh.Cache[[]byte] {
 }
 
 // Shuttle builds the shuttle cache: the fixture's routes and stops with
-// arrivals from a GTFS-RT TripUpdates feed.
-func Shuttle(url string) *refresh.Cache[[]byte] {
+// arrivals from a GTFS-RT TripUpdates feed and, if given, vans from a
+// VehiclePositions feed.
+func Shuttle(url, vehiclesURL string) *refresh.Cache[[]byte] {
 	if url == "" {
 		return nil
 	}
@@ -173,6 +178,13 @@ func Shuttle(url string) *refresh.Cache[[]byte] {
 				return nil, err
 			}
 			full["arrivals"] = arrivals
+			if vehiclesURL != "" {
+				if vehicles, err := gtfsrt.FetchVehicles(ctx, vehiclesURL); err == nil {
+					full["vehicles"] = vehicles
+				} else {
+					log.Printf("shuttle: vehicles feed failed, keeping arrivals only: %v", err)
+				}
+			}
 			full["updated"] = time.Now().UTC().Format(time.RFC3339)
 			full["source"] = "gtfs-rt"
 			return json.Marshal(full)

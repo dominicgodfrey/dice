@@ -1,14 +1,22 @@
 // Food tile (PLAN.md D16): one headline per dining hall for the current
-// meal; expanded, a table per hall per meal with stations and items, and
-// the Grubhub link.
+// meal, with how far through it we are; expanded, each hall's meals with
+// stations and items, and the Grubhub link.
 
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, StyleSheet, View } from "react-native";
 import { originLabel, useSources } from "../../sources/SourcesProvider";
 import { ENTRY_BY_ID } from "../../search/entries";
+import { Text } from "../../ui/Text";
+import { colors, space } from "../../ui/theme";
 import { atClock, formatClock } from "../../util/time";
 import { useNow } from "../../util/useNow";
-import { CollapsedShell, ExpandedShell, Section, shellStyles } from "../shells";
-import { mealAt, mealLine, mealsOn } from "./food";
+import {
+  CollapsedShell,
+  ExpandedShell,
+  Section,
+  t,
+  TileButton,
+} from "../shells";
+import { mealAt, mealLine, mealsOn, type MealNow } from "./food";
 
 const GRUBHUB = ENTRY_BY_ID.get("grubhub");
 
@@ -17,21 +25,43 @@ function useHalls() {
   return venues.data.venues.filter((v) => v.category === "dining");
 }
 
+/** 0..1 through the current meal, or null. */
+function progress(m: MealNow, now: Date): number | null {
+  if (m.state !== "now") return null;
+  const start = atClock(now, m.meal.start).getTime();
+  const end = m.until.getTime();
+  return Math.min(1, Math.max(0, (now.getTime() - start) / (end - start)));
+}
+
 export function FoodCollapsed() {
   const now = useNow(30_000);
   const halls = useHalls();
   return (
-    <CollapsedShell title="Food">
-      {halls.map((h) => (
-        <View key={h.id} style={styles.line}>
-          <Text style={[shellStyles.line, styles.name]} numberOfLines={1}>
-            {h.name.replace(" Dining Hall", "")}
-          </Text>
-          <Text style={[shellStyles.small, styles.meal]} numberOfLines={1}>
-            {mealLine(mealAt(h, now))}
-          </Text>
-        </View>
-      ))}
+    <CollapsedShell title="Food" icon="coffee">
+      {halls.map((h) => {
+        const m = mealAt(h, now);
+        const p = progress(m, now);
+        return (
+          <View key={h.id} style={styles.hall}>
+            <View style={styles.hallLine}>
+              <Text style={t.bodyStrong} numberOfLines={1}>
+                {h.name.replace(" Dining Hall", "")}
+              </Text>
+              <Text style={t.muted} numberOfLines={1}>
+                {mealLine(m)}
+              </Text>
+            </View>
+            <View style={styles.track}>
+              <View
+                style={[
+                  styles.fill,
+                  { width: `${Math.round((p ?? 0) * 100)}%` },
+                ]}
+              />
+            </View>
+          </View>
+        );
+      })}
     </CollapsedShell>
   );
 }
@@ -50,9 +80,7 @@ export function FoodExpanded() {
             : null;
         return (
           <Section key={h.id} title={h.name}>
-            <Text style={[shellStyles.line, styles.headline]}>
-              {mealLine(current)}
-            </Text>
+            <Text style={t.bodyStrong}>{mealLine(current)}</Text>
             {mealsOn(h, now).map((meal) => {
               const stations = menus.data.halls[h.id]?.[meal.name] ?? [];
               const isCurrent = meal.name === currentName;
@@ -62,27 +90,19 @@ export function FoodExpanded() {
                   style={[styles.meal, isCurrent && styles.mealCurrent]}
                 >
                   <View style={styles.mealHead}>
-                    <Text style={[shellStyles.big, styles.white]}>
-                      {meal.name}
-                    </Text>
-                    <Text style={[shellStyles.small, styles.dim]}>
+                    <Text style={t.heading}>{meal.name}</Text>
+                    <Text style={t.muted}>
                       {formatClock(atClock(now, meal.start))} –{" "}
                       {formatClock(atClock(now, meal.end))}
                     </Text>
                   </View>
                   {stations.length === 0 ? (
-                    <Text style={[shellStyles.small, styles.dim]}>
-                      Menu not available
-                    </Text>
+                    <Text style={t.muted}>Menu not available</Text>
                   ) : (
                     stations.map((s) => (
                       <View key={s.station} style={styles.station}>
-                        <Text style={[shellStyles.small, styles.stationName]}>
-                          {s.station}
-                        </Text>
-                        <Text style={[shellStyles.line, styles.white]}>
-                          {s.items.join(" · ")}
-                        </Text>
+                        <Text style={t.label}>{s.station}</Text>
+                        <Text style={t.body}>{s.items.join(" · ")}</Text>
                       </View>
                     ))
                   )}
@@ -93,56 +113,47 @@ export function FoodExpanded() {
         );
       })}
       {GRUBHUB && GRUBHUB.action.kind === "url" ? (
-        <Pressable
-          accessibilityRole="link"
+        <TileButton
+          icon="external-link"
+          label="Order ahead on Grubhub"
           onPress={() => {
             const a = GRUBHUB.action;
             if (a.kind === "url") Linking.openURL(a.url).catch(() => {});
           }}
-          style={({ pressed }) => [styles.grubhub, pressed && { opacity: 0.8 }]}
-        >
-          <Text style={styles.grubhubText}>
-            {GRUBHUB.icon} Order ahead on Grubhub
-          </Text>
-        </Pressable>
+        />
       ) : null}
     </ExpandedShell>
   );
 }
 
 const styles = StyleSheet.create({
-  line: { paddingVertical: 3 },
-  name: { color: "#ffffff", fontWeight: "700" },
-  meal: {
-    marginTop: 10,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: "rgba(0,0,0,0.12)",
+  hall: { marginTop: 8 },
+  hallLine: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    gap: 8,
   },
-  mealCurrent: { backgroundColor: "rgba(255,255,255,0.18)" },
+  track: {
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: colors.onDarkFill,
+    marginTop: 6,
+    overflow: "hidden",
+  },
+  fill: { height: 3, backgroundColor: colors.onDark, borderRadius: 2 },
+  meal: {
+    marginTop: space.md,
+    padding: space.md,
+    borderRadius: 12,
+    backgroundColor: "rgba(0,0,0,0.14)",
+  },
+  mealCurrent: { backgroundColor: colors.onDarkFill },
   mealHead: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "baseline",
     marginBottom: 6,
   },
-  headline: { color: "#ffffff", fontWeight: "600" },
-  white: { color: "#ffffff" },
-  dim: { color: "rgba(255,255,255,0.75)" },
-  station: { marginTop: 6 },
-  stationName: {
-    color: "rgba(255,255,255,0.75)",
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  grubhub: {
-    marginTop: 28,
-    alignSelf: "flex-start",
-    backgroundColor: "#ffffff",
-    borderRadius: 999,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-  },
-  grubhubText: { color: "#E8613C", fontWeight: "700", fontSize: 15 },
+  station: { marginTop: 8 },
 });

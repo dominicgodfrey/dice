@@ -1,5 +1,12 @@
 import type { ShuttleData } from "../../sources/types";
-import { arrivalsAt, minutesLabel, project, stopsOnRoute } from "./shuttle";
+import {
+  alongRoute,
+  arrivalsAt,
+  minutesLabel,
+  project,
+  routeServing,
+  stopsOnRoute,
+} from "./shuttle";
 
 const data: ShuttleData = {
   updated: "",
@@ -45,9 +52,35 @@ describe("stopsOnRoute", () => {
   });
 });
 
+describe("routeServing", () => {
+  it("finds the first route through a stop", () => {
+    expect(routeServing(data, "s3")).toBe("b");
+    expect(routeServing(data, "nope")).toBeNull();
+  });
+});
+
+describe("alongRoute", () => {
+  it("places stops by distance and projects vehicles onto the line", () => {
+    const stops = [
+      { id: "a", name: "A", lat: 42.0, lon: -71.0 },
+      { id: "b", name: "B", lat: 42.0, lon: -71.01 },
+      { id: "c", name: "C", lat: 42.0, lon: -71.03 },
+    ];
+    const r = alongRoute(stops, [
+      { id: "v1", routeId: "r", lat: 42.0001, lon: -71.02 },
+      { id: "far", routeId: "r", lat: 42.1, lon: -71.02 },
+    ]);
+    expect(r.stops[0]).toBe(0);
+    expect(r.stops[1]).toBeCloseTo(1 / 3, 2);
+    expect(r.stops[2]).toBe(1);
+    expect(r.vehicles).toHaveLength(1);
+    expect(r.vehicles[0].t).toBeCloseTo(2 / 3, 2);
+  });
+});
+
 describe("project", () => {
   it("fits stops inside the box with north up", () => {
-    const p = project(data.stops, 200, 100, 10);
+    const { points: p } = project(data.stops, 200, 100, 10);
     const s1 = p.get("s1")!;
     const s3 = p.get("s3")!;
     expect(s3.y).toBeLessThan(s1.y);

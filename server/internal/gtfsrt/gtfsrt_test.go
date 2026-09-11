@@ -64,6 +64,32 @@ func TestParseGroupsArrivals(t *testing.T) {
 	}
 }
 
+func TestParseVehicles(t *testing.T) {
+	feed := &gtfs.FeedMessage{
+		Header: &gtfs.FeedHeader{GtfsRealtimeVersion: proto.String("2.0")},
+		Entity: []*gtfs.FeedEntity{
+			{Id: proto.String("e1"), Vehicle: &gtfs.VehiclePosition{
+				Trip:     &gtfs.TripDescriptor{RouteId: proto.String("campus")},
+				Vehicle:  &gtfs.VehicleDescriptor{Id: proto.String("van-7")},
+				Position: &gtfs.Position{Latitude: proto.Float32(42.37), Longitude: proto.Float32(-71.26)},
+				StopId:   proto.String("usdan"),
+			}},
+			{Id: proto.String("e2"), Vehicle: &gtfs.VehiclePosition{}},
+		},
+	}
+	b, _ := proto.Marshal(feed)
+	got, err := ParseVehicles(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].ID != "van-7" || got[0].RouteID != "campus" || got[0].NextStopID != "usdan" {
+		t.Fatalf("got %+v", got)
+	}
+	if got[0].Lat < 42.36 || got[0].Lat > 42.38 {
+		t.Fatalf("lat %v", got[0].Lat)
+	}
+}
+
 func TestParseRejectsGarbage(t *testing.T) {
 	if _, err := Parse([]byte{0xff, 0xff, 0xff}, time.Now()); err == nil {
 		t.Fatal("expected an error")

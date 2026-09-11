@@ -7,43 +7,204 @@
       "id": "campus",
       "name": "Campus BranVan",
       "color": "#5A67D8",
-      "stops": ["rabb", "usdan", "charles-river", "gosman", "village"]
+      "stops": [
+        "rabb",
+        "usdan",
+        "charles-river",
+        "gosman",
+        "village"
+      ]
     },
     {
       "id": "waltham",
       "name": "Waltham BranVan",
       "color": "#2E9E6B",
-      "stops": ["rabb", "moody-street", "waltham-commons"]
+      "stops": [
+        "rabb",
+        "moody-street",
+        "waltham-commons"
+      ]
     },
     {
       "id": "boston",
       "name": "Boston/Cambridge",
       "color": "#E8613C",
-      "stops": ["rabb", "harvard-square", "copley"]
+      "stops": [
+        "rabb",
+        "harvard-square",
+        "copley"
+      ]
     }
   ],
   "stops": [
-    { "id": "rabb", "name": "Rabb Steps", "lat": 42.3660, "lon": -71.2600 },
-    { "id": "usdan", "name": "Usdan", "lat": 42.3672, "lon": -71.2585 },
-    { "id": "charles-river", "name": "Charles River Apartments", "lat": 42.3705, "lon": -71.2620 },
-    { "id": "gosman", "name": "Gosman", "lat": 42.3690, "lon": -71.2560 },
-    { "id": "village", "name": "The Village", "lat": 42.3640, "lon": -71.2575 },
-    { "id": "moody-street", "name": "Moody Street", "lat": 42.3730, "lon": -71.2360 },
-    { "id": "waltham-commons", "name": "Waltham Commons", "lat": 42.3760, "lon": -71.2350 },
-    { "id": "harvard-square", "name": "Harvard Square", "lat": 42.3736, "lon": -71.1190 },
-    { "id": "copley", "name": "Copley Square", "lat": 42.3500, "lon": -71.0770 }
+    {
+      "id": "rabb",
+      "name": "Rabb Steps",
+      "lat": 42.366,
+      "lon": -71.26
+    },
+    {
+      "id": "usdan",
+      "name": "Usdan",
+      "lat": 42.3672,
+      "lon": -71.2585
+    },
+    {
+      "id": "charles-river",
+      "name": "Charles River Apartments",
+      "lat": 42.3705,
+      "lon": -71.262
+    },
+    {
+      "id": "gosman",
+      "name": "Gosman",
+      "lat": 42.369,
+      "lon": -71.256
+    },
+    {
+      "id": "village",
+      "name": "The Village",
+      "lat": 42.364,
+      "lon": -71.2575
+    },
+    {
+      "id": "moody-street",
+      "name": "Moody Street",
+      "lat": 42.373,
+      "lon": -71.236
+    },
+    {
+      "id": "waltham-commons",
+      "name": "Waltham Commons",
+      "lat": 42.376,
+      "lon": -71.235
+    },
+    {
+      "id": "harvard-square",
+      "name": "Harvard Square",
+      "lat": 42.3736,
+      "lon": -71.119
+    },
+    {
+      "id": "copley",
+      "name": "Copley Square",
+      "lat": 42.35,
+      "lon": -71.077
+    }
   ],
   "arrivals": [
-    { "stopId": "rabb", "routeId": "campus", "minutes": [3, 15, 27] },
-    { "stopId": "rabb", "routeId": "waltham", "minutes": [9, 39] },
-    { "stopId": "rabb", "routeId": "boston", "minutes": [42] },
-    { "stopId": "usdan", "routeId": "campus", "minutes": [6, 18, 30] },
-    { "stopId": "charles-river", "routeId": "campus", "minutes": [1, 13, 25] },
-    { "stopId": "gosman", "routeId": "campus", "minutes": [10, 22, 34] },
-    { "stopId": "village", "routeId": "campus", "minutes": [8, 20, 32] },
-    { "stopId": "moody-street", "routeId": "waltham", "minutes": [19, 49] },
-    { "stopId": "waltham-commons", "routeId": "waltham", "minutes": [24, 54] },
-    { "stopId": "harvard-square", "routeId": "boston", "minutes": [72] },
-    { "stopId": "copley", "routeId": "boston", "minutes": [95] }
+    {
+      "stopId": "rabb",
+      "routeId": "campus",
+      "minutes": [
+        3,
+        15,
+        27
+      ]
+    },
+    {
+      "stopId": "rabb",
+      "routeId": "waltham",
+      "minutes": [
+        9,
+        39
+      ]
+    },
+    {
+      "stopId": "rabb",
+      "routeId": "boston",
+      "minutes": [
+        42
+      ]
+    },
+    {
+      "stopId": "usdan",
+      "routeId": "campus",
+      "minutes": [
+        6,
+        18,
+        30
+      ]
+    },
+    {
+      "stopId": "charles-river",
+      "routeId": "campus",
+      "minutes": [
+        1,
+        13,
+        25
+      ]
+    },
+    {
+      "stopId": "gosman",
+      "routeId": "campus",
+      "minutes": [
+        10,
+        22,
+        34
+      ]
+    },
+    {
+      "stopId": "village",
+      "routeId": "campus",
+      "minutes": [
+        8,
+        20,
+        32
+      ]
+    },
+    {
+      "stopId": "moody-street",
+      "routeId": "waltham",
+      "minutes": [
+        19,
+        49
+      ]
+    },
+    {
+      "stopId": "waltham-commons",
+      "routeId": "waltham",
+      "minutes": [
+        24,
+        54
+      ]
+    },
+    {
+      "stopId": "harvard-square",
+      "routeId": "boston",
+      "minutes": [
+        72
+      ]
+    },
+    {
+      "stopId": "copley",
+      "routeId": "boston",
+      "minutes": [
+        95
+      ]
+    }
+  ],
+  "vehicles": [
+    {
+      "id": "van-1",
+      "routeId": "campus",
+      "lat": 42.3668,
+      "lon": -71.2594,
+      "nextStopId": "usdan"
+    },
+    {
+      "id": "van-2",
+      "routeId": "campus",
+      "lat": 42.3697,
+      "lon": -71.2612,
+      "nextStopId": "charles-river"
+    },
+    {
+      "id": "van-3",
+      "routeId": "waltham",
+      "lat": 42.371,
+      "lon": -71.245,
+      "nextStopId": "moody-street"
+    }
   ]
 }

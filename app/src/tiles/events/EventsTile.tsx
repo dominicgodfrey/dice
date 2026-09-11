@@ -1,13 +1,15 @@
-// Events tile: the next event collapsed; today and this week expanded,
-// each with an add-to-Google link. Data is the fixture until the ICS
-// fetcher on the server has a URL (docs/WIRING.md).
+// Events tile: the next event collapsed, with a date badge; today and this
+// week expanded, each with an add-to-Google link.
 
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, StyleSheet, View } from "react-native";
 import { originLabel, useSources } from "../../sources/SourcesProvider";
 import type { CampusEvent } from "../../sources/types";
+import { Icon } from "../../ui/Icon";
+import { Text } from "../../ui/Text";
+import { colors, space, type } from "../../ui/theme";
 import { formatClock } from "../../util/time";
 import { useNow } from "../../util/useNow";
-import { CollapsedShell, ExpandedShell, Section, shellStyles } from "../shells";
+import { CollapsedShell, ExpandedShell, Section, t } from "../shells";
 import {
   googleCalendarUrl,
   groupByDay,
@@ -16,24 +18,45 @@ import {
   whenLabel,
 } from "./events";
 
+function DateBadge({ date, size = 48 }: { date: Date; size?: number }) {
+  return (
+    <View style={[styles.badge, { width: size, height: size }]}>
+      <Text style={styles.badgeDay}>{date.getDate()}</Text>
+      <Text style={styles.badgeWeekday}>
+        {date.toLocaleDateString(undefined, { weekday: "short" })}
+      </Text>
+    </View>
+  );
+}
+
 export function EventsCollapsed() {
   const now = useNow();
   const { events } = useSources();
-  const next = upcoming(events.data.events, now)[0];
+  const list = upcoming(events.data.events, now);
+  const next = list[0];
+  const after = list[1];
   return (
-    <CollapsedShell title="Events">
+    <CollapsedShell title="Events" icon="calendar">
       {next ? (
-        <View>
-          <Text style={[shellStyles.big, styles.white]} numberOfLines={2}>
-            {next.title}
-          </Text>
-          <Text style={[shellStyles.small, styles.dim]} numberOfLines={1}>
-            {whenLabel(next, now)}
-            {next.location ? ` · ${next.location}` : ""}
-          </Text>
+        <View style={styles.next}>
+          <DateBadge date={new Date(next.start)} />
+          <View style={{ flex: 1 }}>
+            <Text style={t.bodyStrong} numberOfLines={2}>
+              {next.title}
+            </Text>
+            <Text style={t.muted} numberOfLines={1}>
+              {whenLabel(next, now)}
+              {next.location ? ` · ${next.location}` : ""}
+            </Text>
+            {after ? (
+              <Text style={[t.muted, { marginTop: 4 }]} numberOfLines={1}>
+                Then {after.title}, {whenLabel(after, now)}
+              </Text>
+            ) : null}
+          </View>
         </View>
       ) : (
-        <Text style={[shellStyles.line, styles.white]}>Nothing coming up</Text>
+        <Text style={t.body}>Nothing coming up</Text>
       )}
     </CollapsedShell>
   );
@@ -46,7 +69,7 @@ export function EventsExpanded() {
   return (
     <ExpandedShell title="Events" subtitle={originLabel(events)}>
       {groups.length === 0 ? (
-        <Text style={[shellStyles.line, styles.white]}>
+        <Text style={[t.body, { marginTop: space.lg }]}>
           Nothing in the next week.
         </Text>
       ) : null}
@@ -70,10 +93,8 @@ function EventRow({ event }: { event: CampusEvent }) {
   return (
     <View style={styles.event}>
       <View style={styles.eventText}>
-        <Text style={[shellStyles.line, styles.white, styles.bold]}>
-          {event.title}
-        </Text>
-        <Text style={[shellStyles.small, styles.dim]}>
+        <Text style={t.bodyStrong}>{event.title}</Text>
+        <Text style={t.muted}>
           {time}
           {event.location ? ` · ${event.location}` : ""}
           {event.category === "academic" ? " · Academic calendar" : ""}
@@ -87,32 +108,49 @@ function EventRow({ event }: { event: CampusEvent }) {
         }
         style={({ pressed }) => [styles.add, pressed && styles.pressed]}
       >
-        <Text style={[shellStyles.small, styles.white, styles.bold]}>
-          + Calendar
-        </Text>
+        <Icon name="plus" size={14} color={colors.onDark} />
       </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  white: { color: "#ffffff" },
-  dim: { color: "rgba(255,255,255,0.8)" },
-  bold: { fontWeight: "700" },
+  next: { flexDirection: "row", alignItems: "center", gap: space.md },
+  badge: {
+    borderRadius: 10,
+    backgroundColor: colors.onDark,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeDay: {
+    fontSize: 20,
+    lineHeight: 22,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  badgeWeekday: {
+    ...type.label,
+    color: colors.muted,
+    textTransform: "uppercase",
+    lineHeight: 13,
+  },
   event: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: space.md,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255,255,255,0.25)",
+    borderBottomColor: colors.onDarkLine,
   },
   eventText: { flex: 1 },
   add: {
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: colors.onDarkFaint,
+    alignItems: "center",
+    justifyContent: "center",
   },
   pressed: { opacity: 0.7 },
 });

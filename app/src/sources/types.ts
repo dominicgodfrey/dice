@@ -66,11 +66,21 @@ export type ShuttleArrival = {
   minutes: number[];
 };
 
+export type ShuttleVehicle = {
+  id: string;
+  routeId: string;
+  lat: number;
+  lon: number;
+  /** The stop it is heading to, if the feed says. */
+  nextStopId?: string;
+};
+
 export type ShuttleData = {
   updated: string;
   routes: ShuttleRoute[];
   stops: ShuttleStop[];
   arrivals: ShuttleArrival[];
+  vehicles?: ShuttleVehicle[];
 };
 
 export type CampusEvent = {

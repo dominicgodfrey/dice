@@ -1,18 +1,19 @@
-// Sky tile (PLAN.md D17): sunset and what is up now collapsed; a static
-// dome with moon and planets expanded (layer 2); "point your phone" behind
-// a button for the orientation view (layer 3).
+// Sky tile (PLAN.md D17, D38): a chart of what is above Brandeis right now:
+// constellations, planets, the moon. Collapsed, a small chart with the
+// constellations up; expanded, the full chart with labels, your own
+// location on request, and the phone's compass to turn the chart the way
+// you are facing.
 
-import { StyleSheet, Text, View, Pressable } from "react-native";
-import Svg, { Circle, Line, Path, Text as SvgText } from "react-native-svg";
-import {
-  aboveHorizon,
-  bodiesAt,
-  compassPoint,
-  moonPhase,
-  type Body,
-} from "../../sky/bodies";
-import { skyFor, sunAltitude, sunTimes } from "../../sky/sun";
+import * as Location from "expo-location";
+import { useMemo, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { compassPoint, moonPhase } from "../../sky/bodies";
+import { chartAt, constellationsUp, type Observer } from "../../sky/chart";
+import { StarChart } from "../../sky/StarChart";
+import { CAMPUS, skyFor, sunAltitude, sunTimes } from "../../sky/sun";
 import { useHeading } from "../../sky/useHeading";
+import { Text } from "../../ui/Text";
+import { colors, space } from "../../ui/theme";
 import { formatClock } from "../../util/time";
 import { useNow } from "../../util/useNow";
 import {
@@ -20,60 +21,160 @@ import {
   ExpandedShell,
   Row,
   Section,
-  shellStyles,
+  t,
+  TileButton,
 } from "../shells";
+
+const HERE: Observer = { lat: CAMPUS.lat, lon: CAMPUS.lon };
 
 export function SkyCollapsed() {
   const now = useNow();
+  const chart = useMemo(() => chartAt(now, HERE), [now]);
+  const up = constellationsUp(chart).slice(0, 3);
   const { sunrise, sunset } = sunTimes(now);
-  const sky = skyFor(sunAltitude(now));
-  const up = aboveHorizon(bodiesAt(now)).filter((b) => b.id !== "sun");
-  const moon = moonPhase(now);
   const isDay = sunAltitude(now) > 0;
+  const [box, setBox] = useState({ w: 0, h: 0 });
+  const size = Math.max(0, Math.min(box.w, box.h - 44));
   return (
-    <CollapsedShell title="Sky">
-      <Text style={[shellStyles.big, styles.white]}>
-        {isDay
-          ? `Sunset ${formatClock(sunset ?? now)}`
-          : `Sunrise ${formatClock(sunrise ?? now)}`}
-      </Text>
-      <Text style={[shellStyles.small, styles.dim]}>
-        {sky.label} · {moon.name}
-      </Text>
-      <Text style={[shellStyles.small, styles.dim]} numberOfLines={2}>
-        {up.length
-          ? `Up now: ${up.map((b) => b.name).join(", ")}`
-          : "Nothing up but the sun"}
-      </Text>
+    <CollapsedShell title="Sky" icon="moon">
+      <View
+        style={styles.collapsedBody}
+        onLayout={(e) =>
+          setBox({
+            w: e.nativeEvent.layout.width,
+            h: e.nativeEvent.layout.height,
+          })
+        }
+      >
+        {size > 40 ? (
+          <View style={styles.chartCentre}>
+            <StarChart chart={chart} size={size} labels={false} compact />
+          </View>
+        ) : null}
+        <View>
+          <Text style={t.bodyStrong} numberOfLines={1}>
+            {up.length
+              ? up.map((c) => c.name).join(", ")
+              : skyFor(sunAltitude(now)).label}
+          </Text>
+          <Text style={t.muted} numberOfLines={1}>
+            {isDay
+              ? `Sunset ${formatClock(sunset ?? now)}`
+              : `Sunrise ${formatClock(sunrise ?? now)}`}{" "}
+            · {moonPhase(now).name}
+          </Text>
+        </View>
+      </View>
     </CollapsedShell>
   );
 }
 
 export function SkyExpanded() {
   const now = useNow(30_000);
-  const bodies = bodiesAt(now);
-  const up = aboveHorizon(bodies);
+  const [observer, setObserver] = useState<Observer>(HERE);
+  const [locating, setLocating] = useState<
+    "idle" | "working" | "denied" | "on"
+  >("idle");
+  const heading = useHeading();
+  const chart = useMemo(() => chartAt(now, observer), [now, observer]);
+  const up = constellationsUp(chart);
+  const bodiesUp = chart.bodies.filter((b) => b.alt > 0 && b.id !== "sun");
   const moon = moonPhase(now);
   const { sunrise, sunset } = sunTimes(now);
-  const heading = useHeading();
+  const [width, setWidth] = useState(0);
+  const size = Math.min(width, 420);
+  const rotation = heading.state.status === "on" ? heading.state.heading : 0;
+
+  const locate = async () => {
+    setLocating("working");
+    try {
+      const perm = await Location.requestForegroundPermissionsAsync();
+      if (perm.status !== "granted") return setLocating("denied");
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      setObserver({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+      setLocating("on");
+    } catch {
+      setLocating("denied");
+    }
+  };
 
   return (
     <ExpandedShell
       title="Sky"
-      subtitle={`${skyFor(sunAltitude(now)).label} over campus`}
+      subtitle={`${skyFor(sunAltitude(now)).label} · ${observer === HERE ? "over campus" : "over you"}`}
     >
-      <Dome bodies={up} />
-      <Section title="Up now">
-        {up.length === 0 ? (
-          <Text style={[shellStyles.line, styles.white]}>
-            Nothing above the horizon.
-          </Text>
+      <View
+        style={styles.chartWrap}
+        onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      >
+        {size > 0 ? (
+          <StarChart chart={chart} size={size} heading={rotation} />
         ) : null}
-        {up.map((b) => (
+      </View>
+      <Text style={[t.muted, styles.hint]}>
+        {heading.state.status === "on"
+          ? `Turning with you · facing ${compassPoint(rotation)}. Hold the phone flat and look up.`
+          : "North is at the top, as if you were lying on your back looking up. East is on the left."}
+      </Text>
+      <View style={styles.controls}>
+        <TileButton
+          icon="compass"
+          label={
+            heading.state.status === "on"
+              ? "Stop compass"
+              : heading.state.status === "asking"
+                ? "Asking…"
+                : "Use compass"
+          }
+          onPress={heading.state.status === "on" ? heading.stop : heading.start}
+        />
+        <TileButton
+          icon="map-pin"
+          label={
+            locating === "on"
+              ? "Back to campus"
+              : locating === "working"
+                ? "Locating…"
+                : "Use my location"
+          }
+          onPress={() => {
+            if (locating === "on") {
+              setObserver(HERE);
+              setLocating("idle");
+            } else locate();
+          }}
+        />
+      </View>
+      {heading.state.status === "denied" ? (
+        <Text style={t.muted}>{heading.state.reason}</Text>
+      ) : null}
+      {locating === "denied" ? (
+        <Text style={t.muted}>Location was not available; showing campus.</Text>
+      ) : null}
+
+      <Section title="Constellations up">
+        {up.length === 0 ? (
+          <Text style={t.body}>None high enough yet.</Text>
+        ) : null}
+        {up.map((c) => (
+          <Row
+            key={c.abbr}
+            left={c.name}
+            right={`${compassPoint(c.az)} · ${Math.round(c.alt)}° up`}
+          />
+        ))}
+      </Section>
+      <Section title="Planets and moon">
+        {bodiesUp.length === 0 ? (
+          <Text style={t.body}>None above the horizon.</Text>
+        ) : null}
+        {bodiesUp.map((b) => (
           <Row
             key={b.id}
             left={b.name}
-            right={`${compassPoint(b.azimuth)} · ${Math.round(b.altitude)}° up`}
+            right={`${compassPoint(b.az)} · ${Math.round(b.alt)}° up`}
             strong={b.id === "moon"}
           />
         ))}
@@ -86,199 +187,23 @@ export function SkyExpanded() {
           right={`${moon.name}, ${Math.round(moon.fraction * 100)}% lit`}
         />
       </Section>
-      <Section title="Point your phone">
-        {heading.state.status === "on" ? (
-          <Pointing
-            heading={heading.state.heading}
-            bodies={up}
-            onStop={heading.stop}
-          />
-        ) : (
-          <View>
-            <Text style={[shellStyles.small, styles.dim, styles.note]}>
-              Uses your phone&apos;s compass to show what is in the direction
-              you are facing. Nothing leaves the phone.
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={heading.start}
-              style={({ pressed }) => [
-                styles.button,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={[shellStyles.line, styles.white, styles.bold]}>
-                {heading.state.status === "asking" ? "Asking…" : "Start"}
-              </Text>
-            </Pressable>
-            {heading.state.status === "denied" ? (
-              <Text style={[shellStyles.small, styles.dim, styles.note]}>
-                {heading.state.reason}
-              </Text>
-            ) : null}
-          </View>
-        )}
-      </Section>
+      <Text style={[t.muted, { marginTop: space.lg }]}>
+        Your location and compass are used only on this screen and never leave
+        the phone.
+      </Text>
     </ExpandedShell>
   );
 }
 
-const W = 320;
-const H = 170;
-const R = 140;
-const CX = W / 2;
-const CY = H - 12;
-
-/** A static half-dome: azimuth left to right (S at centre), altitude up. */
-function Dome({ bodies }: { bodies: Body[] }) {
-  const pos = (b: Body) => {
-    // Unroll the sky: azimuth 0..360 across the width with south centred,
-    // altitude along the radius.
-    const a = (((b.azimuth - 180 + 540) % 360) - 180) / 180; // -1..1, south = 0
-    const theta = Math.PI / 2 - (a * Math.PI) / 2; // 0..pi, left = east
-    const r = R * (1 - b.altitude / 90);
-    return { x: CX + r * Math.cos(theta), y: CY - r * Math.sin(theta) };
-  };
-  return (
-    <View style={styles.dome}>
-      <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`}>
-        <Path
-          d={`M ${CX - R} ${CY} A ${R} ${R} 0 0 1 ${CX + R} ${CY}`}
-          fill="rgba(255,255,255,0.06)"
-          stroke="rgba(255,255,255,0.5)"
-          strokeWidth={1.5}
-        />
-        <Line
-          x1={CX - R}
-          y1={CY}
-          x2={CX + R}
-          y2={CY}
-          stroke="rgba(255,255,255,0.5)"
-          strokeWidth={1.5}
-        />
-        <Path
-          d={`M ${CX - R * 0.5} ${CY} A ${R * 0.5} ${R * 0.5} 0 0 1 ${CX + R * 0.5} ${CY}`}
-          fill="none"
-          stroke="rgba(255,255,255,0.2)"
-          strokeWidth={1}
-          strokeDasharray="4 4"
-        />
-        <SvgText
-          x={CX - R}
-          y={CY + 11}
-          fill="rgba(255,255,255,0.7)"
-          fontSize={10}
-        >
-          E
-        </SvgText>
-        <SvgText
-          x={CX - 4}
-          y={CY - R - 4}
-          fill="rgba(255,255,255,0.7)"
-          fontSize={10}
-        >
-          S
-        </SvgText>
-        <SvgText
-          x={CX + R - 8}
-          y={CY + 11}
-          fill="rgba(255,255,255,0.7)"
-          fontSize={10}
-        >
-          W
-        </SvgText>
-        {bodies.map((b) => {
-          const p = pos(b);
-          const r = b.id === "sun" ? 9 : b.id === "moon" ? 7 : 4;
-          const fill =
-            b.id === "sun"
-              ? "#FFD166"
-              : b.id === "moon"
-                ? "#F1F1F1"
-                : "#BFE0FF";
-          return <Circle key={b.id} cx={p.x} cy={p.y} r={r} fill={fill} />;
-        })}
-        {bodies.map((b) => {
-          const p = pos(b);
-          return (
-            <SvgText
-              key={`${b.id}-l`}
-              x={p.x + 9}
-              y={p.y + 4}
-              fill="#ffffff"
-              fontSize={11}
-            >
-              {b.name}
-            </SvgText>
-          );
-        })}
-      </Svg>
-    </View>
-  );
-}
-
-/** Layer 3: bodies within 45° of where the phone points. */
-function Pointing({
-  heading,
-  bodies,
-  onStop,
-}: {
-  heading: number;
-  bodies: Body[];
-  onStop: () => void;
-}) {
-  const near = bodies
-    .map((b) => ({ b, delta: ((b.azimuth - heading + 540) % 360) - 180 }))
-    .filter(({ delta }) => Math.abs(delta) <= 45)
-    .sort((x, y) => Math.abs(x.delta) - Math.abs(y.delta));
-  return (
-    <View>
-      <Text style={[shellStyles.big, styles.white]}>
-        {compassPoint(heading)} · {Math.round(heading)}°
-      </Text>
-      {near.length === 0 ? (
-        <Text style={[shellStyles.small, styles.dim, styles.note]}>
-          Nothing that way right now. Turn slowly.
-        </Text>
-      ) : (
-        near.map(({ b, delta }) => (
-          <Row
-            key={b.id}
-            left={b.name}
-            right={`${Math.abs(delta) < 8 ? "ahead" : delta < 0 ? `${Math.round(-delta)}° left` : `${Math.round(delta)}° right`} · ${Math.round(b.altitude)}° up`}
-            strong={Math.abs(delta) < 8}
-          />
-        ))
-      )}
-      <Pressable
-        accessibilityRole="button"
-        onPress={onStop}
-        style={({ pressed }) => [styles.button, pressed && styles.pressed]}
-      >
-        <Text style={[shellStyles.small, styles.white, styles.bold]}>Stop</Text>
-      </Pressable>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  white: { color: "#ffffff" },
-  dim: { color: "rgba(255,255,255,0.8)" },
-  bold: { fontWeight: "700" },
-  note: { marginBottom: 10 },
-  dome: {
-    marginTop: 8,
-    borderRadius: 16,
-    backgroundColor: "rgba(0,0,0,0.2)",
-    overflow: "hidden",
+  collapsedBody: { flex: 1, justifyContent: "space-between" },
+  chartCentre: { alignItems: "center", flex: 1, justifyContent: "center" },
+  chartWrap: { alignItems: "center", marginTop: space.lg },
+  hint: { marginTop: space.md, textAlign: "center", color: colors.onDarkMuted },
+  controls: {
+    flexDirection: "row",
+    gap: space.sm,
+    flexWrap: "wrap",
+    justifyContent: "center",
   },
-  button: {
-    marginTop: 8,
-    alignSelf: "flex-start",
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.2)",
-  },
-  pressed: { opacity: 0.7 },
 });

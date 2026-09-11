@@ -11,6 +11,7 @@
 //	EVENTS_ICS_URLS   ICS calendars to serve as events; see internal/feeds
 //	MENUS_JSON_URL    menus JSON to serve instead of the fixture
 //	SHUTTLE_GTFS_RT_URL  GTFS-RT TripUpdates feed for BranVan arrivals
+//	SHUTTLE_GTFS_RT_VEHICLES_URL  matching VehiclePositions feed, optional
 //	TZ                the campus zone for floating ICS times, default America/New_York
 package main
 
@@ -60,7 +61,7 @@ func main() {
 	}
 	start("events", feeds.Events(os.Getenv("EVENTS_ICS_URLS"), loc))
 	start("menus", feeds.Menus(os.Getenv("MENUS_JSON_URL")))
-	start("shuttle", feeds.Shuttle(os.Getenv("SHUTTLE_GTFS_RT_URL")))
+	start("shuttle", feeds.Shuttle(os.Getenv("SHUTTLE_GTFS_RT_URL"), os.Getenv("SHUTTLE_GTFS_RT_VEHICLES_URL")))
 
 	srv := &http.Server{
 		Addr:              ":" + port,
