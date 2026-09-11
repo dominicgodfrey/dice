@@ -4,6 +4,8 @@ A student app for Brandeis: one home screen of live, glanceable tiles, with
 every other campus service one tap or one search away. Not affiliated with
 Brandeis University or with Branda, the university's own app.
 
+- [docs/HANDOFF.md](docs/HANDOFF.md) is where to start: state, conventions,
+  what is verified, what is next.
 - [docs/PRD.md](docs/PRD.md) is what it is and who it is for.
 - [docs/PLAN.md](docs/PLAN.md) is every decision, why it was made, the build
   order, and what still needs somebody's permission.
