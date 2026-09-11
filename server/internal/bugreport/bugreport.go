@@ -7,12 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/smtp"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"github.com/dominicgodfrey/dice/server/internal/mail"
 )
 
 const (
@@ -61,15 +62,11 @@ func (r *Report) Validate() error {
 	return nil
 }
 
-// Mailer sends a stored report somewhere. Nil means store only.
-type Mailer interface {
-	Send(s Stored) error
-}
-
-// Store writes reports to a directory and optionally mails them.
+// Store writes reports to a directory and optionally mails them to To.
 type Store struct {
 	Dir    string
-	Mailer Mailer
+	Mailer mail.Sender
+	To     string
 }
 
 // Save writes the report and returns its ID. Mail failures are logged, not
@@ -93,65 +90,27 @@ func (s *Store) Save(r Report, remoteAddr string) (Stored, error) {
 	if err := os.WriteFile(path, b, 0o644); err != nil {
 		return Stored{}, err
 	}
-	if s.Mailer != nil {
-		if err := s.Mailer.Send(st); err != nil {
+	if s.Mailer != nil && s.To != "" {
+		msg := mail.Message{To: s.To, Subject: "Dice bug report " + st.ID, Body: body(st)}
+		if err := s.Mailer.Send(msg); err != nil {
 			log.Printf("bugreport: mail failed for %s: %v", st.ID, err)
 		}
 	}
 	return st, nil
 }
 
-// SMTPMailer sends through a plain SMTP relay with PLAIN auth. STARTTLS is
-// used when the server offers it (net/smtp does this by itself).
-type SMTPMailer struct {
-	Host, Port, User, Pass string
-	From, To               string
-}
-
-// SMTPFromEnv builds a mailer from SMTP_HOST, SMTP_PORT, SMTP_USER,
-// SMTP_PASS, BUG_REPORT_FROM and BUG_REPORT_TO. Returns nil when the host
-// or recipient is missing, so a bare deployment still stores reports.
-func SMTPFromEnv() *SMTPMailer {
-	m := &SMTPMailer{
-		Host: os.Getenv("SMTP_HOST"),
-		Port: os.Getenv("SMTP_PORT"),
-		User: os.Getenv("SMTP_USER"),
-		Pass: os.Getenv("SMTP_PASS"),
-		From: os.Getenv("BUG_REPORT_FROM"),
-		To:   os.Getenv("BUG_REPORT_TO"),
-	}
-	if m.Host == "" || m.To == "" {
-		return nil
-	}
-	if m.Port == "" {
-		m.Port = "587"
-	}
-	if m.From == "" {
-		m.From = m.User
-	}
-	return m
-}
-
-func (m *SMTPMailer) Send(s Stored) error {
-	var body strings.Builder
-	fmt.Fprintf(&body, "From: Dice <%s>\r\n", m.From)
-	fmt.Fprintf(&body, "To: %s\r\n", m.To)
-	fmt.Fprintf(&body, "Subject: Dice bug report %s\r\n", s.ID)
-	body.WriteString("MIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n")
-	body.WriteString(s.Message)
-	body.WriteString("\r\n\r\n")
+func body(s Stored) string {
+	var b strings.Builder
+	b.WriteString(s.Message)
+	b.WriteString("\n\n")
 	if s.Email != "" {
-		fmt.Fprintf(&body, "Reply to: %s\r\n", s.Email)
+		fmt.Fprintf(&b, "Reply to: %s\n", s.Email)
 	}
 	if s.SentryEventID != "" {
-		fmt.Fprintf(&body, "Sentry event: %s\r\n", s.SentryEventID)
+		fmt.Fprintf(&b, "Sentry event: %s\n", s.SentryEventID)
 	}
 	for k, v := range s.Context {
-		fmt.Fprintf(&body, "%s: %s\r\n", k, v)
+		fmt.Fprintf(&b, "%s: %s\n", k, v)
 	}
-	var auth smtp.Auth
-	if m.User != "" {
-		auth = smtp.PlainAuth("", m.User, m.Pass, m.Host)
-	}
-	return smtp.SendMail(m.Host+":"+m.Port, auth, m.From, []string{m.To}, []byte(body.String()))
+	return b.String()
 }

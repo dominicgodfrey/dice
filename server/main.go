@@ -13,6 +13,10 @@
 //	SHUTTLE_GTFS_RT_URL  GTFS-RT TripUpdates feed for BranVan arrivals
 //	SHUTTLE_GTFS_RT_VEHICLES_URL  matching VehiclePositions feed, optional
 //	TZ                the campus zone for floating ICS times, default America/New_York
+//	APP_URL           where magic links point, e.g. https://dice.pages.dev
+//	DATABASE_URL      Postgres for accounts; unset means in-memory (dev only)
+//	AUTH_ECHO_LINKS   "1" returns the magic link in the API response (dev only)
+//	MAIL_FROM         sender address for all mail; falls back to BUG_REPORT_FROM
 package main
 
 import (
@@ -23,9 +27,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dominicgodfrey/dice/server/internal/accounts"
 	"github.com/dominicgodfrey/dice/server/internal/api"
 	"github.com/dominicgodfrey/dice/server/internal/bugreport"
 	"github.com/dominicgodfrey/dice/server/internal/feeds"
+	"github.com/dominicgodfrey/dice/server/internal/mail"
 	"github.com/dominicgodfrey/dice/server/internal/refresh"
 )
 
@@ -33,19 +39,44 @@ func main() {
 	port := env("PORT", "8080")
 	origins := strings.Split(env("ALLOWED_ORIGINS", "*"), ",")
 
-	store := &bugreport.Store{
-		Dir:    env("BUG_REPORT_DIR", "./data/bug-reports"),
-		Mailer: nil,
-	}
-	if m := bugreport.SMTPFromEnv(); m != nil {
-		store.Mailer = m
-		log.Printf("bug reports will be emailed to %s via %s", m.To, m.Host)
-	} else {
-		log.Printf("bug reports stored in %s (no SMTP configured)", store.Dir)
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	var mailer mail.Sender = mail.Logger{}
+	if m := mail.FromEnv(); m != nil {
+		mailer = m
+		log.Printf("mail goes through %s as %s", m.Host, m.From)
+	} else {
+		log.Printf("no SMTP configured: mail is logged, not sent")
+	}
+
+	store := &bugreport.Store{
+		Dir:    env("BUG_REPORT_DIR", "./data/bug-reports"),
+		Mailer: mailer,
+		To:     os.Getenv("BUG_REPORT_TO"),
+	}
+	log.Printf("bug reports stored in %s", store.Dir)
+
+	auth := &accounts.Service{
+		Mailer:    mailer,
+		AppURL:    env("APP_URL", "http://localhost:8081"),
+		EchoLinks: os.Getenv("AUTH_ECHO_LINKS") == "1",
+	}
+	if dsn := os.Getenv("DATABASE_URL"); dsn != "" {
+		pg, err := accounts.OpenPostgres(ctx, dsn)
+		if err != nil {
+			log.Fatalf("postgres: %v", err)
+		}
+		defer pg.Close()
+		if err := pg.Migrate(ctx); err != nil {
+			log.Fatalf("postgres migrate: %v", err)
+		}
+		auth.Store = pg
+		log.Printf("accounts: postgres")
+	} else {
+		auth.Store = accounts.NewMem()
+		log.Printf("accounts: in-memory store (no DATABASE_URL); sign-ins are lost on restart")
+	}
 	loc, err := time.LoadLocation(env("TZ", "America/New_York"))
 	if err != nil {
 		loc = time.Local
@@ -65,7 +96,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:              ":" + port,
-		Handler:           api.New(api.Config{AllowedOrigins: origins, BugReports: store, Live: live}),
+		Handler:           api.New(api.Config{AllowedOrigins: origins, BugReports: store, Live: live, Accounts: auth}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,

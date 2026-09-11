@@ -11,8 +11,10 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/dominicgodfrey/dice/server/fixtures"
+	"github.com/dominicgodfrey/dice/server/internal/accounts"
 	"github.com/dominicgodfrey/dice/server/internal/bugreport"
 	"github.com/dominicgodfrey/dice/server/internal/feeds"
 )
@@ -27,6 +29,8 @@ type Config struct {
 	// Live feeds by fixture name. Served instead of the fixture whenever
 	// they have a value; the fixture is the fallback.
 	Live map[string]feeds.Provider
+	// Accounts enables sign-in and preference sync (D20). Nil disables.
+	Accounts *accounts.Service
 }
 
 // New returns the root handler.
@@ -96,7 +100,119 @@ func New(cfg Config) http.Handler {
 		writeJSON(w, http.StatusCreated, map[string]string{"id": st.ID})
 	})
 
+	if cfg.Accounts != nil {
+		mountAccounts(mux, cfg.Accounts)
+	}
+
 	return cors(cfg.AllowedOrigins, mux)
+}
+
+func bearer(r *http.Request) string {
+	h := r.Header.Get("Authorization")
+	if strings.HasPrefix(h, "Bearer ") {
+		return strings.TrimSpace(h[len("Bearer "):])
+	}
+	return ""
+}
+
+func mountAccounts(mux *http.ServeMux, svc *accounts.Service) {
+	mux.HandleFunc("POST /api/v1/auth/request", func(w http.ResponseWriter, r *http.Request) {
+		var in struct {
+			Email string `json:"email"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&in); err != nil {
+			http.Error(w, "bad JSON", http.StatusBadRequest)
+			return
+		}
+		link, err := svc.RequestLink(r.Context(), in.Email)
+		switch {
+		case errors.Is(err, accounts.ErrBadEmail), errors.Is(err, accounts.ErrTooSoon):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		case err != nil:
+			log.Printf("auth request: %v", err)
+			http.Error(w, "could not send the link", http.StatusInternalServerError)
+			return
+		}
+		out := map[string]any{"sent": true}
+		if link != "" {
+			out["link"] = link
+		}
+		writeJSON(w, http.StatusAccepted, out)
+	})
+
+	mux.HandleFunc("POST /api/v1/auth/verify", func(w http.ResponseWriter, r *http.Request) {
+		var in struct {
+			Token string `json:"token"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&in); err != nil {
+			http.Error(w, "bad JSON", http.StatusBadRequest)
+			return
+		}
+		sess, err := svc.Verify(r.Context(), in.Token)
+		if errors.Is(err, accounts.ErrBadToken) {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		if err != nil {
+			log.Printf("auth verify: %v", err)
+			http.Error(w, "could not sign in", http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, http.StatusOK, sess)
+	})
+
+	mux.HandleFunc("POST /api/v1/auth/signout", func(w http.ResponseWriter, r *http.Request) {
+		_ = svc.SignOut(r.Context(), bearer(r))
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	mux.HandleFunc("GET /api/v1/me", func(w http.ResponseWriter, r *http.Request) {
+		_, email, err := svc.Who(r.Context(), bearer(r))
+		if err != nil {
+			http.Error(w, "signed out", http.StatusUnauthorized)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"email": email})
+	})
+
+	mux.HandleFunc("GET /api/v1/preferences", func(w http.ResponseWriter, r *http.Request) {
+		userID, _, err := svc.Who(r.Context(), bearer(r))
+		if err != nil {
+			http.Error(w, "signed out", http.StatusUnauthorized)
+			return
+		}
+		blob, at, err := svc.GetPreferences(r.Context(), userID)
+		if errors.Is(err, accounts.ErrNotFound) {
+			http.Error(w, "no preferences yet", http.StatusNotFound)
+			return
+		}
+		if err != nil {
+			http.Error(w, "could not load", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("X-Dice-Updated", at.UTC().Format(time.RFC3339))
+		_, _ = w.Write(blob)
+	})
+
+	mux.HandleFunc("PUT /api/v1/preferences", func(w http.ResponseWriter, r *http.Request) {
+		userID, _, err := svc.Who(r.Context(), bearer(r))
+		if err != nil {
+			http.Error(w, "signed out", http.StatusUnauthorized)
+			return
+		}
+		blob, err := io.ReadAll(http.MaxBytesReader(w, r.Body, accounts.MaxBlob+1))
+		if err != nil {
+			http.Error(w, "too large", http.StatusRequestEntityTooLarge)
+			return
+		}
+		if err := svc.PutPreferences(r.Context(), userID, blob); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -128,8 +244,9 @@ func cors(allowed []string, next http.Handler) http.Handler {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 				w.Header().Add("Vary", "Origin")
 			}
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			w.Header().Set("Access-Control-Expose-Headers", "X-Dice-Source, X-Dice-Updated")
 			w.Header().Set("Access-Control-Max-Age", "600")
 		}
 		if r.Method == http.MethodOptions {

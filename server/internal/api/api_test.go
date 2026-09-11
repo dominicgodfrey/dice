@@ -9,8 +9,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/dominicgodfrey/dice/server/internal/accounts"
 	"github.com/dominicgodfrey/dice/server/internal/bugreport"
 	"github.com/dominicgodfrey/dice/server/internal/feeds"
+	"github.com/dominicgodfrey/dice/server/internal/mail"
 )
 
 func newTestHandler(t *testing.T) (http.Handler, string) {
@@ -101,6 +103,61 @@ func TestLiveOverridesFixture(t *testing.T) {
 	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/shuttle", nil))
 	if rec.Header().Get("X-Dice-Source") != "fixture" {
 		t.Fatalf("expected fixture fallback, got %s", rec.Header().Get("X-Dice-Source"))
+	}
+}
+
+func TestAccountsOverHTTP(t *testing.T) {
+	svc := &accounts.Service{Store: accounts.NewMem(), Mailer: mail.Logger{}, AppURL: "https://d.test", EchoLinks: true}
+	h := New(Config{Accounts: svc})
+	post := func(path, body, token string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		return rec
+	}
+	rec := post("/api/v1/auth/request", `{"email":"x@gmail.com"}`, "")
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("gmail accepted: %d", rec.Code)
+	}
+	rec = post("/api/v1/auth/request", `{"email":"x@brandeis.edu"}`, "")
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("request: %d %s", rec.Code, rec.Body.String())
+	}
+	var out struct{ Link string }
+	_ = json.Unmarshal(rec.Body.Bytes(), &out)
+	token := out.Link[strings.Index(out.Link, "token=")+6:]
+	rec = post("/api/v1/auth/verify", `{"token":"`+token+`"}`, "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("verify: %d %s", rec.Code, rec.Body.String())
+	}
+	var sess struct{ Token, Email string }
+	_ = json.Unmarshal(rec.Body.Bytes(), &sess)
+	if sess.Email != "x@brandeis.edu" || sess.Token == "" {
+		t.Fatalf("session %+v", sess)
+	}
+
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/preferences", strings.NewReader(`{"version":1}`))
+	req.Header.Set("Authorization", "Bearer "+sess.Token)
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("put prefs: %d %s", rec.Code, rec.Body.String())
+	}
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/preferences", nil)
+	req.Header.Set("Authorization", "Bearer "+sess.Token)
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || rec.Body.String() != `{"version":1}` || rec.Header().Get("X-Dice-Updated") == "" {
+		t.Fatalf("get prefs: %d %q", rec.Code, rec.Body.String())
+	}
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("me without token: %d", rec.Code)
 	}
 }
 
