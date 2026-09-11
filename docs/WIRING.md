@@ -55,6 +55,31 @@ Tick items here as you do them; the code side of each is already built.
       not the US cloud). Unlocks: screen views and named events. Autocapture
       and session recording are off in code and the privacy page says so.
 
+## Feeds (PLAN.md Phase 4)
+
+Each feed is a server environment variable. Unset, the fixture is served;
+set, the server refreshes it on a schedule and serves the last good copy.
+
+- [ ] **Campus events ICS.** Find the CampusGroups calendar's ICS export
+      (check whether it is public or per-user) and the registrar's
+      academic calendar ICS, then set
+      `EVENTS_ICS_URLS=campus=<url>,academic=<url>`. Refreshed hourly.
+- [ ] **Dining vendor.** Find out which company runs Brandeis dining and
+      where its menus live online. The scraper is not written yet because
+      that is unknown; the seam is `server/internal/feeds/feeds.go` under
+      `Menus`. As a stopgap, anything that hosts a JSON file in the menus
+      shape (see `server/fixtures/menus.json`) can be set as
+      `MENUS_JSON_URL` and the Food tile goes live.
+- [ ] **BranVan feed.** When Transportation shares the TripShot GTFS-RT
+      TripUpdates URL, set `SHUTTLE_GTFS_RT_URL`. Refreshed every 30
+      seconds. Their stop and route IDs will differ from the fixture's, so
+      update `server/fixtures/shuttle.json` to their IDs (from TripShot's
+      static GTFS) at the same time. To demo the parser to them first:
+
+      ```bash
+      cd server && go run ./cmd/gtfsprobe https://cdn.mbta.com/realtime/TripUpdates.pb
+      ```
+
 ## Verify against the live services
 
 Each is a few minutes against the real site. The code marks each spot.

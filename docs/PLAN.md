@@ -319,15 +319,19 @@ run in parallel; phases mostly cannot.
 
 ### Phase 4: tiles with real behaviour
 
-- [ ] Hours tile with followed-venue preference and tabular expanded view.
-- [ ] Food tile with per-meal tables and the Grubhub link.
-- [ ] Menu scraper in Go, hourly, cached, falling back to the fixture.
-- [ ] Events tile; ICS fetcher and parser in Go; add-to-Google URL builder.
-      Verify whether the CampusGroups ICS is public before asking anyone.
-- [ ] Sky tile: dome with moon and planets (layer 2); "point your phone"
-      orientation view behind a button (layer 3).
-- [ ] Laundry tile with building preference, against a fixture.
-- [ ] BranVan tile with home-stop preference, against a fixture; GTFS-RT
+- [x] Hours tile with followed-venue preference and tabular expanded view.
+- [x] Food tile with per-meal tables and the Grubhub link.
+- [~] Menu scraper in Go, hourly, cached, falling back to the fixture.
+      *The hourly cache and the seam are built; the scraper itself waits on
+      knowing the dining vendor's site. A JSON URL in the menus shape can
+      feed it meanwhile. See WIRING.md.*
+- [x] Events tile; ICS fetcher and parser in Go; add-to-Google URL builder.
+      *The ICS URLs are an owner step; see WIRING.md.*
+- [x] Sky tile: dome with moon and planets (layer 2); "point your phone"
+      orientation view behind a button (layer 3). *Layer 3 needs a real
+      phone to test.*
+- [x] Laundry tile with building preference, against a fixture.
+- [x] BranVan tile with home-stop preference, against a fixture; GTFS-RT
       parser and cache in Go tested against MBTA's public feed.
 
 ### Phase 5: accounts and the rest that needs nobody
