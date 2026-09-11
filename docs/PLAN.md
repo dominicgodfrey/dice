@@ -287,12 +287,13 @@ run in parallel; phases mostly cannot.
       to be felt on the owner's phone.*
 - [x] Fixed grid with static spans and greedy gap fill (D8, D28), packing
       tested in Jest.
-- [ ] Long-press menu, hide, live drag with flow-around and flow-back
+- [x] Long-press menu, hide, live drag with flow-around and flow-back
       (D11, D30).
-- [ ] Edit-mode gallery of hidden and available tiles; onboarding opens it.
-- [ ] Preferences store (D19, D31) persisting order, hidden set, promoted
+- [x] Edit-mode gallery of hidden and available tiles; onboarding opens it.
+- [x] Preferences store (D19, D31) persisting order, hidden set, promoted
       links, with the migration path tested.
-- [ ] Bottom bar: search pill and emergency button (D13), tested on a phone.
+- [x] Bottom bar: search pill and emergency button (D13). *Built; the
+      one-handed reach test on the owner's phone is still owed.*
 
 ### Phase 2: chrome and static content
 
