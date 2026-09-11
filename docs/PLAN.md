@@ -329,6 +329,15 @@ coordinates; the footprint rectangles are no longer drawn. Setup is one
 HTTP request, and the result looks like the place. Photo checkpoints for
 a street-level "where do I go" view come later, as photos are taken.
 
+**D42. The header's time of day is an arc, not a sentence.** A low arch
+from sunrise to sunset with the sun where "now" falls; after sunset the
+same arch runs moonrise to moonset with the moon, or sunset to the next
+sunrise with a hollow marker when the moon is down. The times sit at the
+ends and the sky's name ("Golden hour") between them. The owner asked for
+a curved number line; the previous "Day · Sunrise 6:20 AM · Sunset 7:01 PM"
+line said the same thing without showing where in the day you are.
+Computed on device from the campus coordinate like the rest of D17.
+
 ## 2. Things that need access, and the seam each stops at
 
 | Feature | Who to ask | What is built without them | What their answer unlocks |

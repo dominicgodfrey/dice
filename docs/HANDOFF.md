@@ -23,7 +23,7 @@ Two codebases in one repo:
 ## Where things stand
 
 Every build phase in PLAN.md section 3 is done (Phases 0–5), plus a design
-pass and a scraping pass. 41 numbered decisions, D1–D41, all in PLAN.md
+pass and a scraping pass. 42 numbered decisions, D1–D42, all in PLAN.md
 with the alternative each beat. What remains is in WIRING.md (owner
 steps) and Phase 6 (asks that need a person).
 
@@ -118,10 +118,12 @@ App, under `app/src`:
 - `sources/` — `client.ts` (fetch with fixture fallback), `index.ts`
   (typed getters), `SourcesProvider.tsx` (loads all, refreshes every
   minute), `types.ts` (the JSON shapes).
-- `sky/` — sun, bodies, star catalog, chart projection, compass hook.
+- `sky/` — sun, bodies, star catalog, chart projection, compass hook,
+  and `arc.ts` for the header's rise-to-set line.
 - `map/` — imagery extent, Mercator projection, the map component.
 - `search/` — the fixture of entries and the fuzzy matcher.
-- `account/`, `preferences/`, `observability/`, `chrome/`, `ui/`.
+- `account/`, `preferences/`, `observability/`, `ui/`, and `chrome/`
+  (the header with its `DayArc`, the bottom bar, the page).
 
 Server, under `server/`:
 
