@@ -52,7 +52,7 @@ export const TILES: readonly TileDef[] = [
   },
   {
     id: "events",
-    title: "Events",
+    title: "Academic Calendar and Events",
     span: { w: 2, h: 1 },
     icon: "calendar",
     paletteKey: "moss",

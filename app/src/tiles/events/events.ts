@@ -1,4 +1,5 @@
-// Event grouping and the add-to-Google URL (PLAN.md Phase 4). Pure; tested.
+// Event grouping, the calendar grids (D48) and the add-to-Google URL
+// (PLAN.md Phase 4). Pure; tested.
 
 import type { CampusEvent } from "../../sources/types";
 import { formatClock, sameDay, startOfDay } from "../../util/time";
@@ -29,8 +30,18 @@ export function dayLabel(d: Date, now: Date): string {
   return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric" });
 }
 
+/** An event that began on an earlier day and has not ended. */
+function ongoing(e: CampusEvent, now: Date): boolean {
+  return new Date(e.start).getTime() < startOfDay(now).getTime();
+}
+
 export function whenLabel(e: CampusEvent, now: Date): string {
   const s = new Date(e.start);
+  if (ongoing(e, now)) {
+    return isAllDay(e)
+      ? "Today"
+      : `Today · until ${formatClock(new Date(e.end))}`;
+  }
   const day = dayLabel(s, now);
   return isAllDay(e) ? day : `${day} · ${formatClock(s)}`;
 }
@@ -46,7 +57,8 @@ export function groupByDay(
   const limit = startOfDay(now, days).getTime();
   const groups = new Map<string, Grouped>();
   for (const e of upcoming(events, now)) {
-    const s = new Date(e.start);
+    // Something that began days ago and is still on belongs to today.
+    const s = ongoing(e, now) ? now : new Date(e.start);
     if (s.getTime() >= limit) continue;
     const key = startOfDay(s).toISOString();
     const g = groups.get(key) ?? { key, label: dayLabel(s, now), events: [] };
@@ -84,4 +96,62 @@ export function googleCalendarUrl(e: CampusEvent): string {
   if (e.location) params.set("location", e.location);
   if (e.url) params.set("details", e.url);
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+/** Events touching the given local day, earliest first. */
+export function eventsOn(
+  events: readonly CampusEvent[],
+  day: Date,
+): CampusEvent[] {
+  const from = startOfDay(day).getTime();
+  const to = startOfDay(day, 1).getTime();
+  return events
+    .filter((e) => {
+      const s = new Date(e.start).getTime();
+      const end = new Date(e.end).getTime();
+      return s < to && end > from;
+    })
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+}
+
+/** Sunday to Saturday of the week holding the day. */
+export function weekOf(d: Date): Date[] {
+  const sunday = startOfDay(d, -d.getDay());
+  return Array.from({ length: 7 }, (_, i) => startOfDay(sunday, i));
+}
+
+/** The weeks that cover the day's month, each Sunday to Saturday. */
+export function monthGrid(d: Date): Date[][] {
+  const first = new Date(d.getFullYear(), d.getMonth(), 1);
+  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  const weeks: Date[][] = [];
+  let cursor = startOfDay(first, -first.getDay());
+  while (cursor.getTime() <= last.getTime()) {
+    weeks.push(Array.from({ length: 7 }, (_, i) => startOfDay(cursor, i)));
+    cursor = startOfDay(cursor, 7);
+  }
+  return weeks;
+}
+
+/** The same day of the month `n` months on, clamped to that month's end. */
+export function addMonths(d: Date, n: number): Date {
+  const first = new Date(d.getFullYear(), d.getMonth() + n, 1);
+  const lastDay = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+  first.setDate(Math.min(d.getDate(), lastDay.getDate()));
+  return startOfDay(first);
+}
+
+/** "September 2026". */
+export function monthLabel(d: Date): string {
+  return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+}
+
+/** "Sep 6 – 12" or "Aug 30 – Sep 5". */
+export function weekLabel(d: Date): string {
+  const [a, , , , , , b] = weekOf(d);
+  const md = (x: Date) =>
+    x.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return a.getMonth() === b.getMonth()
+    ? `${md(a)} – ${b.getDate()}`
+    : `${md(a)} – ${md(b)}`;
 }

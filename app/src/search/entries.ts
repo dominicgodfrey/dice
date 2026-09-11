@@ -225,8 +225,8 @@ export const ENTRIES: readonly SearchEntry[] = [
   },
   {
     id: "tile-events",
-    title: "Events",
-    keywords: ["calendar", "what's on", "this week", "academic calendar"],
+    title: "Academic Calendar and Events",
+    keywords: ["events", "calendar", "what's on", "this week", "month"],
     icon: "calendar",
     subtitle: "Tile",
     action: { kind: "tile", tile: "events" },

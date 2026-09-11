@@ -390,6 +390,14 @@ tile that fills the space, in an L if that fills it better, with icons
 that never differ in size. Moving it in the order does nothing; it is
 always last.
 
+**D48. Events is "Academic Calendar and Events", as a list or a calendar.**
+The owner's name for the tile, since the academic calendar is half of what
+it shows. Expanded, two icon buttons choose list (this week grouped by
+day, as before) or calendar; the calendar has Month and Week pills, arrows
+to move, dots on days with events, and the picked day's events under the
+grid. The choice is a preference (`eventsView`, default list) so it
+sticks. The grid maths is pure and tested; everything is device-local time.
+
 ## 2. Things that need access, and the seam each stops at
 
 | Feature | Who to ask | What is built without them | What their answer unlocks |

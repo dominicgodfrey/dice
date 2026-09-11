@@ -7,6 +7,9 @@
 
 export const PREFERENCES_VERSION = 2;
 
+/** How the events tile shows its events (D48). */
+export type EventsView = "list" | "month" | "week";
+
 export type Preferences = {
   version: typeof PREFERENCES_VERSION;
   /** Tile IDs in grid order. */
@@ -19,6 +22,7 @@ export type Preferences = {
   /** LaundryView room ID; a room is one building's laundry. */
   laundryRoom: string | null;
   homeStop: string | null;
+  eventsView: EventsView;
   /** Has the first-launch gallery been shown (D11)? */
   onboarded: boolean;
   /** Tile ID -> palette key the student picked (D36). */
@@ -33,6 +37,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   followedVenues: [],
   laundryRoom: null,
   homeStop: null,
+  eventsView: "list",
   onboarded: false,
   colors: {},
 };
