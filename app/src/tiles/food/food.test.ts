@@ -32,6 +32,20 @@ describe("mealsOn", () => {
   });
 });
 
+describe("mealsOn with scraped meals", () => {
+  it("prefers today's scraped periods on the matching date only", () => {
+    const scraped: Venue = {
+      ...hall,
+      todayDate: "2026-09-11",
+      todayMeals: [{ name: "Light Lunch", start: "14:30", end: "17:00" }],
+    };
+    expect(mealsOn(scraped, fri(12)).map((m) => m.name)).toEqual([
+      "Light Lunch",
+    ]);
+    expect(mealsOn(scraped, sat(12)).map((m) => m.name)).toEqual(["Brunch"]);
+  });
+});
+
 describe("mealAt", () => {
   it("finds the current meal", () => {
     const m = mealAt(hall, fri(12));

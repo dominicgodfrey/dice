@@ -8,8 +8,11 @@
 //	BUG_REPORT_DIR    where reports are written, default ./data/bug-reports
 //	SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, BUG_REPORT_FROM, BUG_REPORT_TO
 //	                  when set, each report is also emailed
-//	EVENTS_ICS_URLS   ICS calendars to serve as events; see internal/feeds
-//	MENUS_JSON_URL    menus JSON to serve instead of the fixture
+//	SCRAPE            "0" turns off the public-site scrapers (dining hours and
+//	                  menus, LaundryView, LibCal); default on
+//	EVENTS_ICS_URLS   ICS calendars to serve as events; defaults to the public
+//	                  CampusGroups and academic calendars (see internal/feeds)
+//	MENUS_JSON_URL    menus JSON to serve instead of scraping the dining site
 //	SHUTTLE_GTFS_RT_URL  GTFS-RT TripUpdates feed for BranVan arrivals
 //	SHUTTLE_GTFS_RT_VEHICLES_URL  matching VehiclePositions feed, optional
 //	TZ                the campus zone for floating ICS times, default America/New_York
@@ -90,8 +93,22 @@ func main() {
 		live[name] = feeds.Start(ctx, c)
 		log.Printf("%s: live feed on, refreshing every %s", name, c.Interval)
 	}
-	start("events", feeds.Events(os.Getenv("EVENTS_ICS_URLS"), loc))
-	start("menus", feeds.Menus(os.Getenv("MENUS_JSON_URL")))
+	scrape := os.Getenv("SCRAPE") != "0"
+	start("events", feeds.Events(env("EVENTS_ICS_URLS", feeds.DefaultEventsSpec), loc))
+	if url := os.Getenv("MENUS_JSON_URL"); url != "" {
+		start("menus", feeds.Menus(url))
+	} else if scrape {
+		start("menus", feeds.MenusScrape(loc))
+	} else {
+		start("menus", nil)
+	}
+	if scrape {
+		start("venues", feeds.VenuesScrape(loc))
+		start("laundry", feeds.LaundryScrape())
+	} else {
+		start("venues", nil)
+		start("laundry", nil)
+	}
 	start("shuttle", feeds.Shuttle(os.Getenv("SHUTTLE_GTFS_RT_URL"), os.Getenv("SHUTTLE_GTFS_RT_VEHICLES_URL")))
 
 	srv := &http.Server{

@@ -19,6 +19,9 @@ export type Venue = {
   hours: Record<Weekday, HoursRange[]>;
   meals?: { weekday: Meal[]; weekend: Meal[] };
   exceptions: { date: string; hours: HoursRange[]; note?: string }[];
+  /** Scraped meal periods for one date; used when it is today (D40). */
+  todayMeals?: Meal[];
+  todayDate?: string;
 };
 
 export type VenuesData = {

@@ -1,9 +1,12 @@
 // Which meal a dining hall is serving now (PLAN.md D16). Pure; tested.
 
 import type { Meal, Venue } from "../../sources/types";
-import { atClock, formatClock, isWeekend } from "../../util/time";
+import { atClock, formatClock, isWeekend, localDateKey } from "../../util/time";
 
 export function mealsOn(venue: Venue, day: Date): Meal[] {
+  if (venue.todayMeals && venue.todayDate === localDateKey(day)) {
+    return venue.todayMeals;
+  }
   if (!venue.meals) return [];
   return isWeekend(day) ? venue.meals.weekend : venue.meals.weekday;
 }
