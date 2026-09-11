@@ -232,6 +232,14 @@ export const ENTRIES: readonly SearchEntry[] = [
     action: { kind: "tile", tile: "events" },
   },
   {
+    id: "tile-map",
+    title: "Map",
+    keywords: ["campus map", "where is", "building", "directions", "find"],
+    icon: "map",
+    subtitle: "Tile",
+    action: { kind: "tile", tile: "map" },
+  },
+  {
     id: "tile-sky",
     title: "Sky",
     keywords: ["sunset", "sunrise", "moon", "planets", "stars", "astronomy"],

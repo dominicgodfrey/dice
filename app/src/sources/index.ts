@@ -1,6 +1,7 @@
 // The typed source modules (PLAN.md D6). Each returns one shape whether the
 // data came from the server or the bundled fixture.
 
+import campusFixture from "../fixtures/data/campus.json";
 import eventsFixture from "../fixtures/data/events.json";
 import laundryFixture from "../fixtures/data/laundry.json";
 import menusFixture from "../fixtures/data/menus.json";
@@ -8,6 +9,7 @@ import shuttleFixture from "../fixtures/data/shuttle.json";
 import venuesFixture from "../fixtures/data/venues.json";
 import { fetchWithFallback, hasArrays, isRecord, type Sourced } from "./client";
 import type {
+  CampusData,
   EventsData,
   LaundryData,
   MenusData,
@@ -25,6 +27,7 @@ export const FIXTURES = {
   laundry: laundryFixture as unknown as LaundryData,
   shuttle: shuttleFixture as unknown as ShuttleData,
   events: eventsFixture as unknown as EventsData,
+  campus: campusFixture as unknown as CampusData,
 };
 
 export function getVenues(): Promise<Sourced<VenuesData>> {
@@ -64,5 +67,13 @@ export function getEvents(): Promise<Sourced<EventsData>> {
     "/api/v1/events",
     FIXTURES.events,
     (v): v is EventsData => hasArrays(v, "events"),
+  );
+}
+
+export function getCampus(): Promise<Sourced<CampusData>> {
+  return fetchWithFallback(
+    "/api/v1/campus",
+    FIXTURES.campus,
+    (v): v is CampusData => hasArrays(v, "buildings", "places", "photos"),
   );
 }

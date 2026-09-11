@@ -32,6 +32,7 @@ import {
 import {
   Gesture,
   GestureDetector,
+  type GestureType,
   type NativeGesture,
 } from "react-native-gesture-handler";
 import Animated, {
@@ -81,6 +82,7 @@ const ExpandContext = createContext<ExpandApi | null>(null);
 type ExpandedScroll = {
   onScroll: ReturnType<typeof useAnimatedScrollHandler>;
   gesture: NativeGesture;
+  closePan: GestureType;
 };
 
 const ExpandedScrollContext = createContext<ExpandedScroll | null>(null);
@@ -237,7 +239,7 @@ function Overlay({
         scheduleOnRN(collapse);
       }
     });
-  const expandedScroll = { onScroll, gesture: nativeScroll };
+  const expandedScroll = { onScroll, gesture: nativeScroll, closePan: pan };
 
   const origin = active?.origin ?? dest;
 

@@ -102,3 +102,44 @@ export type MenusData = {
   updated: string;
   halls: Record<string, Record<string, MenuStation[]>>;
 };
+
+export type Building = {
+  id: string;
+  name: string;
+  kind:
+    | "academic"
+    | "residence"
+    | "dining"
+    | "library"
+    | "athletics"
+    | "student"
+    | "arts"
+    | "admin"
+    | "other";
+  lat: number;
+  lon: number;
+  /** Footprint in metres and rotation in degrees. */
+  w: number;
+  h: number;
+  rot: number;
+  entrances: { lat: number; lon: number; label: string }[];
+  rooms: { lat: number; lon: number; label: string }[];
+};
+
+export type Place = { id: string; name: string; lat: number; lon: number };
+
+export type PhotoCheckpoint = {
+  id: string;
+  lat: number;
+  lon: number;
+  label: string;
+  url: string;
+};
+
+export type CampusData = {
+  updated: string;
+  origin: { lat: number; lon: number };
+  buildings: Building[];
+  places: Place[];
+  photos: PhotoCheckpoint[];
+};

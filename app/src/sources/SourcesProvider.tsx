@@ -13,11 +13,13 @@ import {
 import type { Origin } from "./client";
 import {
   FIXTURES,
+  getCampus,
   getEvents,
   getLaundry,
   getMenus,
   getShuttle,
   getVenues,
+  type CampusData,
   type EventsData,
   type LaundryData,
   type MenusData,
@@ -39,6 +41,7 @@ export type Sources = {
   laundry: Slot<LaundryData>;
   shuttle: Slot<ShuttleData>;
   events: Slot<EventsData>;
+  campus: Slot<CampusData>;
 };
 
 const initial: Sources = {
@@ -47,6 +50,7 @@ const initial: Sources = {
   laundry: { data: FIXTURES.laundry, origin: null, fetchedAt: null },
   shuttle: { data: FIXTURES.shuttle, origin: null, fetchedAt: null },
   events: { data: FIXTURES.events, origin: null, fetchedAt: null },
+  campus: { data: FIXTURES.campus, origin: null, fetchedAt: null },
 };
 
 const SourcesContext = createContext<Sources>(initial);
@@ -69,6 +73,7 @@ export function SourcesProvider({ children }: { children: ReactNode }) {
       getLaundry().then((r) => put("laundry", r));
       getShuttle().then((r) => put("shuttle", r));
       getEvents().then((r) => put("events", r));
+      getCampus().then((r) => put("campus", r));
     };
     run();
     const id = setInterval(run, REFRESH_MS);

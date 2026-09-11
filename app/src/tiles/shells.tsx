@@ -8,6 +8,7 @@ import { GestureDetector } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useExpandedScroll } from "../expand/ExpandProvider";
+import type { GestureType } from "react-native-gesture-handler";
 import { WIDE_BREAKPOINT } from "../grid/layout";
 import { Icon, type IconName } from "../ui/Icon";
 import { Text } from "../ui/Text";
@@ -71,6 +72,11 @@ export function ExpandedShell({
       </GestureDetector>
     </View>
   );
+}
+
+/** The card's swipe-to-close pan, for content whose own drag must win over it. */
+export function useClosePan(): GestureType {
+  return useExpandedScroll().closePan;
 }
 
 /** A labelled section inside an expanded view. */

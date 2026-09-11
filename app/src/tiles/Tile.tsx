@@ -8,6 +8,7 @@ import { FoodCollapsed, FoodExpanded } from "./food/FoodTile";
 import { HoursCollapsed, HoursExpanded } from "./hours/HoursTile";
 import { LaundryCollapsed, LaundryExpanded } from "./laundry/LaundryTile";
 import { LinksCollapsed, LinksExpanded } from "./links/LinksTile";
+import { MapCollapsed, MapExpanded } from "./map/MapTile";
 import type { TileDef, TileId } from "./registry";
 import { SkyCollapsed, SkyExpanded } from "./sky/SkyTile";
 
@@ -21,6 +22,7 @@ const CONTENT: Record<TileId, Content> = {
   events: { Collapsed: EventsCollapsed, Expanded: EventsExpanded },
   sky: { Collapsed: SkyCollapsed, Expanded: SkyExpanded },
   links: { Collapsed: LinksCollapsed, Expanded: LinksExpanded },
+  map: { Collapsed: MapCollapsed, Expanded: MapExpanded },
 };
 
 export function Tile({ def, expanded }: { def: TileDef; expanded: boolean }) {

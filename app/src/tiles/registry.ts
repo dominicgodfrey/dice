@@ -8,7 +8,7 @@ import type { IconName } from "../ui/Icon";
 import { isPaletteKey, palette, type PaletteKey } from "../ui/theme";
 
 export type TileId =
-  "hours" | "food" | "laundry" | "branvan" | "events" | "sky" | "links";
+  "hours" | "food" | "laundry" | "branvan" | "events" | "sky" | "links" | "map";
 
 export type TileDef = {
   id: TileId;
@@ -60,6 +60,13 @@ export const TILES: readonly TileDef[] = [
     span: { w: 2, h: 2 },
     icon: "moon",
     paletteKey: "ink",
+  },
+  {
+    id: "map",
+    title: "Map",
+    span: { w: 1, h: 1 },
+    icon: "map",
+    paletteKey: "teal",
   },
   {
     id: "links",
