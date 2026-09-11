@@ -116,16 +116,31 @@ func TestParseSchoolAndRoom(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(machines) == 0 {
-		t.Fatal("no machines")
+	// Foster Lower Apartments: 7 washers and 7 dryers, two pairs stacked.
+	if len(machines) != 14 {
+		t.Fatalf("machines %d: %+v", len(machines), machines)
 	}
+	byID := map[string]Machine{}
 	for _, m := range machines {
 		if m.Type != "washer" && m.Type != "dryer" {
 			t.Fatalf("type %q", m.Type)
 		}
-		if m.Status != "out_of_order" {
-			t.Fatalf("offline room should read out_of_order, got %+v", m)
-		}
+		byID[m.ID] = m
+	}
+	if m := byID["04"]; m.Status != "in_use" || m.MinutesLeft == nil || *m.MinutesLeft != 34 {
+		t.Fatalf("running washer: %+v", m)
+	}
+	if m := byID["01"]; m.Status != "out_of_order" {
+		t.Fatalf("out of service: %+v", m)
+	}
+	if m := byID["14"]; m.Status != "in_use" || m.MinutesLeft != nil {
+		t.Fatalf("extended cycle: %+v", m)
+	}
+	if m := byID["10"]; m.Type != "dryer" || m.Status != "out_of_order" {
+		t.Fatalf("upper half of stacked dryer: %+v", m)
+	}
+	if m := byID["12"]; m.Type != "dryer" || m.Status != "available" {
+		t.Fatalf("upper half of stacked dryer: %+v", m)
 	}
 }
 
@@ -145,6 +160,14 @@ func TestMachineStatus(t *testing.T) {
 	s, m = machineStatus("", 1, 7)
 	if s != "in_use" || m == nil || *m != 7 {
 		t.Fatal("toggle fallback")
+	}
+	s, m = machineStatus("Ext. Cycle", 2, 0)
+	if s != "in_use" || m != nil {
+		t.Fatal("extended cycle")
+	}
+	s, _ = machineStatus("Offline", 4, 40)
+	if s != "offline" {
+		t.Fatal("offline")
 	}
 }
 

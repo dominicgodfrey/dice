@@ -10,6 +10,8 @@ export type Counts = {
   /** Soonest machine to finish, in minutes, if none is free of that type. */
   nextWasher: number | null;
   nextDryer: number | null;
+  /** Machines whose room is not reporting; counted in neither total. */
+  offline: number;
 };
 
 export function countMachines(machines: readonly Machine[]): Counts {
@@ -20,8 +22,13 @@ export function countMachines(machines: readonly Machine[]): Counts {
     dryers: 0,
     nextWasher: null,
     nextDryer: null,
+    offline: 0,
   };
   for (const m of machines) {
+    if (m.status === "offline") {
+      c.offline++;
+      continue;
+    }
     if (m.status === "out_of_order") continue;
     const isWasher = m.type === "washer";
     if (isWasher) c.washers++;
@@ -42,8 +49,11 @@ export function countBuilding(b: LaundryBuilding): Counts {
   return countMachines(b.rooms.flatMap((r) => r.machines));
 }
 
-/** "3 washers · 1 dryer free" or "No washers · 2 dryers free". */
+/** "3 washers · 1 dryer free", "No washers · 2 dryers free", or
+ * "Not reporting" when every working machine is in a room that is offline. */
 export function countsLine(c: Counts): string {
+  if (c.washers === 0 && c.dryers === 0 && c.offline > 0)
+    return "Not reporting";
   const w =
     c.washersFree === 0
       ? "No washers"
@@ -57,6 +67,7 @@ export function countsLine(c: Counts): string {
 
 export function machineLabel(m: Machine): string {
   if (m.status === "out_of_order") return "Out of order";
+  if (m.status === "offline") return "Not reporting";
   if (m.status === "available") return "Free";
   return m.minutesLeft === null ? "In use" : `${m.minutesLeft} min left`;
 }

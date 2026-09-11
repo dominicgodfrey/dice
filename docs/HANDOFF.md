@@ -140,8 +140,11 @@ Server, under `server/`:
   best guesses where not scraped; each is marked VERIFY in its file and
   listed in WIRING.md.
 - The star catalog is from memory, good to a fraction of a degree.
-- LaundryView status strings for busy machines were inferred (every room
-  was offline when sampled); see `machineStatus` in `scrape/laundry.go`.
+- LaundryView was checked against live rooms on 2026-09-11: running,
+  extended-cycle, out-of-service and stacked machines all parse. 18 of the
+  24 rooms reported "Offline" that day; the app shows those as "Not
+  reporting" rather than broken. If a room stays offline into term, ask
+  whether it has moved off LaundryView.
 - Lower Usdan's page had no scheduled hours the day it was scraped, so
   the menus feed has an empty entry for it until a day it is open.
 - The web build has console errors in development when the local server

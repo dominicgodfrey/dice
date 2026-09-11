@@ -30,7 +30,8 @@ export type VenuesData = {
   venues: Venue[];
 };
 
-export type MachineStatus = "available" | "in_use" | "out_of_order";
+/** offline: the room is not reporting, so the machine's state is unknown. */
+export type MachineStatus = "available" | "in_use" | "out_of_order" | "offline";
 
 export type Machine = {
   id: string;

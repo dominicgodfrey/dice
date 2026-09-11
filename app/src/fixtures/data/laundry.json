@@ -1,7 +1,7 @@
 {
   "updated": "2026-09-11",
   "source": "fixture",
-  "note": "Sample data behind the laundry seam (PLAN.md section 2). Replaced by the vendor feed when one is granted. Statuses: available, in_use, out_of_order.",
+  "note": "Sample data behind the laundry seam (PLAN.md section 2). Replaced by the vendor feed when one is granted. Statuses: available, in_use, out_of_order, offline (room not reporting).",
   "buildings": [
     {
       "id": "massell",

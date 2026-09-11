@@ -23,7 +23,15 @@ describe("countMachines", () => {
       dryers: 2,
       nextWasher: 14,
       nextDryer: 5,
+      offline: 0,
     });
+  });
+
+  it("counts offline machines separately", () => {
+    const c = countMachines([m("washer", "offline"), m("dryer", "offline")]);
+    expect(c.washers).toBe(0);
+    expect(c.dryers).toBe(0);
+    expect(c.offline).toBe(2);
   });
 });
 
@@ -42,6 +50,19 @@ describe("countsLine", () => {
       "No washers · no dryers free",
     );
   });
+
+  it("says when the room is not reporting", () => {
+    expect(
+      countsLine(
+        countMachines([m("washer", "offline"), m("dryer", "offline")]),
+      ),
+    ).toBe("Not reporting");
+    expect(
+      countsLine(
+        countMachines([m("washer", "offline"), m("dryer", "available")]),
+      ),
+    ).toBe("No washers · 1 dryer free");
+  });
 });
 
 describe("machineLabel", () => {
@@ -50,5 +71,6 @@ describe("machineLabel", () => {
     expect(machineLabel(m("washer", "in_use", 7))).toBe("7 min left");
     expect(machineLabel(m("washer", "in_use"))).toBe("In use");
     expect(machineLabel(m("dryer", "out_of_order"))).toBe("Out of order");
+    expect(machineLabel(m("dryer", "offline"))).toBe("Not reporting");
   });
 });

@@ -36,13 +36,14 @@ function MachineGrid({
   size?: number;
 }) {
   return (
-    <View style={styles.grid}>
-      {machines.map((m) => {
+    <View style={[styles.grid, { gap: size < 20 ? 4 : 6 }]}>
+      {machines.map((m, i) => {
         const free = m.status === "available";
-        const broken = m.status === "out_of_order";
+        const broken = m.status === "out_of_order" || m.status === "offline";
+        // IDs repeat across a building's rooms ("01" in every room).
         return (
           <View
-            key={m.id}
+            key={i}
             accessibilityLabel={`${m.type} ${machineLabel(m)}`}
             style={[
               styles.machine,
@@ -55,7 +56,7 @@ function MachineGrid({
               broken && styles.machineBroken,
             ]}
           >
-            {!free && !broken && m.minutesLeft !== null ? (
+            {size >= 18 && !free && !broken && m.minutesLeft !== null ? (
               <Text style={[styles.minutes, { fontSize: size >= 30 ? 11 : 9 }]}>
                 {m.minutesLeft}
               </Text>
@@ -78,9 +79,12 @@ export function LaundryCollapsed() {
   }
   const c = countBuilding(building);
   const machines = building.rooms.flatMap((r) => r.machines);
+  // Shapiro has 30 machines; shrink the shapes so the counts line stays.
+  const n = machines.length;
+  const size = n <= 8 ? 26 : n <= 16 ? 18 : 12;
   return (
     <CollapsedShell title="Laundry" icon="droplet">
-      <MachineGrid machines={machines} size={26} />
+      <MachineGrid machines={machines} size={size} />
       <Text style={[t.bodyStrong, { marginTop: 8 }]} numberOfLines={1}>
         {countsLine(c)}
       </Text>
@@ -114,10 +118,12 @@ export function LaundryExpanded() {
                 <Text style={t.bodyStrong}>{b.name}</Text>
                 <Text style={t.muted}>{countsLine(countBuilding(b))}</Text>
               </View>
-              <MachineGrid
-                machines={b.rooms.flatMap((r) => r.machines)}
-                size={16}
-              />
+              <View style={styles.choiceGrid}>
+                <MachineGrid
+                  machines={b.rooms.flatMap((r) => r.machines)}
+                  size={16}
+                />
+              </View>
             </Pressable>
           ))}
         </View>
@@ -172,7 +178,7 @@ export function LaundryExpanded() {
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  grid: { flexDirection: "row", flexWrap: "wrap" },
   machine: {
     borderWidth: 1.5,
     borderColor: colors.onDarkMuted,
@@ -195,5 +201,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.onDarkLine,
   },
+  choiceGrid: { flexShrink: 1, maxWidth: "45%" },
   pressed: { opacity: 0.7 },
 });

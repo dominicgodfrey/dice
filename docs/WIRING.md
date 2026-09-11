@@ -82,6 +82,10 @@ set, the server refreshes it on a schedule and serves the last good copy.
       and scraped; nothing to do. `MENUS_JSON_URL` overrides, `SCRAPE=0`
       turns every scraper off.
 - [x] **Laundry.** LaundryView's API is public and scraped; nothing to do.
+- [ ] **Offline laundry rooms.** On 2026-09-11 only North Quad, Ridgewood
+      and the Village were reporting; every other room said "Offline".
+      Glance at `/api/v1/laundry` once term starts; if a room is still
+      offline, ask Facilities whether it is still on LaundryView.
 - [ ] **Watch the scrapers.** Each is tested against a saved copy of the
       real page, so when a site changes the deploy's test run fails and
       the tile shows the fixture until the parser is updated. Worth a

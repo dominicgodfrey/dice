@@ -65,7 +65,9 @@ func ParseSchool(b []byte) ([]Room, error) {
 	return out, nil
 }
 
-// Machine is one appliance in the app's shape.
+// Machine is one appliance in the app's shape. Status is available,
+// in_use, out_of_order, or offline (the room is not reporting, so nothing
+// is known about the machine).
 type Machine struct {
 	ID          string `json:"id"`
 	Type        string `json:"type"`
@@ -75,17 +77,24 @@ type Machine struct {
 
 var minRe = regexp.MustCompile(`(?i)(\d+)\s*min`)
 
-// ParseRoom reads /api/currentRoomData?location=<room>.
+// ParseRoom reads /api/currentRoomData?location=<room>. A stacked pair
+// (two dryers in one cabinet) is one object with a second set of fields
+// suffixed 2; it is emitted as two machines.
 func ParseRoom(b []byte) ([]Machine, error) {
 	var v struct {
 		Objects []struct {
-			ApplianceType string  `json:"appliance_type"`
-			Desc          string  `json:"appliance_desc"`
-			Key           string  `json:"appliance_desc_key"`
-			StatusToggle  int     `json:"status_toggle"`
-			TimeRemaining int     `json:"time_remaining"`
-			TimeLeftLite  string  `json:"time_left_lite"`
-			Percentage    float64 `json:"percentage"`
+			ApplianceType  string `json:"appliance_type"`
+			Desc           string `json:"appliance_desc"`
+			Key            string `json:"appliance_desc_key"`
+			StatusToggle   int    `json:"status_toggle"`
+			TimeRemaining  int    `json:"time_remaining"`
+			TimeLeftLite   string `json:"time_left_lite"`
+			Stacked        bool   `json:"stacked"`
+			Desc2          string `json:"appliance_desc2"`
+			Key2           string `json:"appliance_desc_key2"`
+			StatusToggle2  int    `json:"status_toggle2"`
+			TimeRemaining2 int    `json:"time_remaining2"`
+			TimeLeftLite2  string `json:"time_left_lite2"`
 		} `json:"objects"`
 	}
 	if err := json.Unmarshal(b, &v); err != nil {
@@ -102,25 +111,35 @@ func ParseRoom(b []byte) ([]Machine, error) {
 		default:
 			continue
 		}
-		m := Machine{ID: o.Desc, Type: typ}
-		if m.ID == "" {
-			m.ID = o.Key
+		out = append(out, machine(typ, o.Desc, o.Key, o.TimeLeftLite, o.StatusToggle, o.TimeRemaining))
+		if o.Stacked && (o.Desc2 != "" || o.Key2 != "") {
+			out = append(out, machine(typ, o.Desc2, o.Key2, o.TimeLeftLite2, o.StatusToggle2, o.TimeRemaining2))
 		}
-		m.Status, m.MinutesLeft = machineStatus(o.TimeLeftLite, o.StatusToggle, o.TimeRemaining)
-		out = append(out, m)
 	}
 	return out, nil
 }
 
+func machine(typ, desc, key, lite string, toggle, remaining int) Machine {
+	m := Machine{ID: strings.TrimSpace(desc), Type: typ}
+	if m.ID == "" {
+		m.ID = key
+	}
+	m.Status, m.MinutesLeft = machineStatus(lite, toggle, remaining)
+	return m
+}
+
 // machineStatus reads LaundryView's status text first, then its toggle.
-// Toggle values seen: 0 available, 1 in use, 2 cycle ended (still busy),
-// 3 out of service, 4 offline.
+// Text seen live: "Available", "35 min remaining", "Ext. Cycle" (running
+// past its estimate), "Out of service", "Offline" (room not reporting).
+// Toggles seen: 0 available, 2 running, 3 out of service, 4 offline.
 func machineStatus(lite string, toggle, remaining int) (string, *int) {
 	l := strings.ToLower(lite)
 	switch {
 	case strings.Contains(l, "available"), strings.Contains(l, "open"):
 		return "available", nil
-	case strings.Contains(l, "offline"), strings.Contains(l, "out of"), strings.Contains(l, "not available"):
+	case strings.Contains(l, "offline"):
+		return "offline", nil
+	case strings.Contains(l, "out of"), strings.Contains(l, "not available"):
 		return "out_of_order", nil
 	}
 	if m := minRe.FindStringSubmatch(l); m != nil {
@@ -130,8 +149,10 @@ func machineStatus(lite string, toggle, remaining int) (string, *int) {
 	switch toggle {
 	case 0:
 		return "available", nil
-	case 3, 4:
+	case 3:
 		return "out_of_order", nil
+	case 4:
+		return "offline", nil
 	}
 	if remaining > 0 {
 		n := remaining
