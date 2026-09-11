@@ -280,11 +280,12 @@ run in parallel; phases mostly cannot.
 
 ### Phase 1: the grid, with nothing in it
 
-- [ ] `ExpandingTile` (D9, D27, D29) with a plain colored square: tap to
+- [x] `ExpandingTile` (D9, D27, D29) with a plain colored square: tap to
       expand, swipe down to collapse, on iOS, Android and web; capped width
       on desktop; each expanded tile is a route. This is the demo; do it
-      first. Palette and type scale land here (D33).
-- [ ] Fixed grid with static spans and greedy gap fill (D8, D28), packing
+      first. Palette and type scale land here (D33). *Built on web; still
+      to be felt on the owner's phone.*
+- [x] Fixed grid with static spans and greedy gap fill (D8, D28), packing
       tested in Jest.
 - [ ] Long-press menu, hide, live drag with flow-around and flow-back
       (D11, D30).
