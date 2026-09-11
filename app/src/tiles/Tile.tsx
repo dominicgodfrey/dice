@@ -1,5 +1,6 @@
 // One tile component, two layouts chosen by `expanded` (PLAN.md D9). Phase 1
 // ships the plain coloured square; real content per tile arrives in Phase 4.
+// Link tiles (D12) only have the collapsed layout.
 
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,6 +10,7 @@ import type { TileDef } from "./registry";
 type Props = { def: TileDef; expanded: boolean };
 
 export function Tile({ def, expanded }: Props) {
+  if (def.kind === "link") return <LinkLayout def={def} />;
   return expanded ? (
     <ExpandedLayout def={def} />
   ) : (
@@ -19,6 +21,15 @@ export function Tile({ def, expanded }: Props) {
 function CollapsedLayout({ def }: { def: TileDef }) {
   return (
     <View style={styles.collapsed}>
+      <Text style={styles.collapsedTitle}>{def.title}</Text>
+    </View>
+  );
+}
+
+function LinkLayout({ def }: { def: Extract<TileDef, { kind: "link" }> }) {
+  return (
+    <View style={styles.collapsed}>
+      <Text style={styles.linkIcon}>{def.icon}</Text>
       <Text style={styles.collapsedTitle}>{def.title}</Text>
     </View>
   );
@@ -50,6 +61,7 @@ function ExpandedLayout({ def }: { def: TileDef }) {
 const styles = StyleSheet.create({
   collapsed: { flex: 1, justifyContent: "flex-end", padding: 14 },
   collapsedTitle: { color: "#ffffff", fontSize: 17, fontWeight: "600" },
+  linkIcon: { fontSize: 34, marginBottom: 6 },
   expanded: { flex: 1, paddingHorizontal: 24 },
   grabber: {
     alignSelf: "center",

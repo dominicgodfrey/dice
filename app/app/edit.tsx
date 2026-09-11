@@ -6,13 +6,15 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hideTile, showTile } from "../src/grid/order";
 import { usePreferences } from "../src/preferences/store";
-import { TILES } from "../src/tiles/registry";
+import { PROMOTABLE } from "../src/search/entries";
+import { allTiles, LIVE_TILES, linkTileId } from "../src/tiles/registry";
 
 export default function EditTiles() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { prefs, update } = usePreferences();
   const hidden = new Set(prefs.hidden);
+  const promoted = new Set(prefs.promoted);
 
   return (
     <View style={styles.screen}>
@@ -27,7 +29,7 @@ export default function EditTiles() {
           Pick what you want on your home screen. Long-press a tile there to
           move or hide it.
         </Text>
-        {TILES.map((t) => {
+        {LIVE_TILES.map((t) => {
           const shown = !hidden.has(t.id);
           return (
             <Pressable
@@ -37,7 +39,7 @@ export default function EditTiles() {
               accessibilityLabel={t.title}
               onPress={() =>
                 update((p) =>
-                  shown ? hideTile(p, t.id) : showTile(p, t.id, TILES),
+                  shown ? hideTile(p, t.id) : showTile(p, t.id, allTiles(p)),
                 )
               }
               style={({ pressed }) => [styles.row, pressed && styles.pressed]}
@@ -50,9 +52,44 @@ export default function EditTiles() {
             </Pressable>
           );
         })}
+        <Text style={styles.section}>Links</Text>
+        <Text style={styles.subtitle}>
+          Any of these can sit on the grid as a one-tap tile. You can also add
+          one from a search result.
+        </Text>
+        {PROMOTABLE.map((e) => {
+          const on = promoted.has(e.id);
+          return (
+            <Pressable
+              key={e.id}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: on }}
+              accessibilityLabel={e.title}
+              onPress={() =>
+                update((p) =>
+                  on
+                    ? { promoted: p.promoted.filter((x) => x !== e.id) }
+                    : {
+                        promoted: [...p.promoted, e.id],
+                        hidden: p.hidden.filter((h) => h !== linkTileId(e.id)),
+                      },
+                )
+              }
+              style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+            >
+              <View style={[styles.swatch, { backgroundColor: e.color }]}>
+                <Text style={styles.swatchIcon}>{e.icon}</Text>
+              </View>
+              <Text style={styles.rowTitle}>{e.title}</Text>
+              <Text style={[styles.state, on && styles.stateOn]}>
+                {on ? "On grid" : "Add"}
+              </Text>
+            </Pressable>
+          );
+        })}
         <Pressable
           accessibilityRole="button"
-          onPress={() => update({ order: [], hidden: [] })}
+          onPress={() => update({ order: [], hidden: [], promoted: [] })}
           style={({ pressed }) => [styles.reset, pressed && styles.pressed]}
         >
           <Text style={styles.resetText}>Reset layout</Text>
@@ -98,7 +135,20 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   pressed: { backgroundColor: "#f4f4f4" },
-  swatch: { width: 36, height: 36, borderRadius: 10 },
+  swatch: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  swatchIcon: { fontSize: 20 },
+  section: {
+    marginTop: 28,
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#111111",
+  },
   rowTitle: { flex: 1, fontSize: 17, color: "#111111" },
   state: { fontSize: 14, color: "#999999" },
   stateOn: { color: "#2b7a3d", fontWeight: "600" },

@@ -13,6 +13,7 @@
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -28,9 +29,10 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
+import { Header } from "../chrome/Header";
 import { useExpand } from "../expand/ExpandProvider";
 import { usePreferences } from "../preferences/store";
-import { TILES, type TileDef, type TileId } from "../tiles/registry";
+import { allTiles, type TileDef } from "../tiles/registry";
 import { Tile } from "../tiles/Tile";
 import {
   cellSize,
@@ -62,9 +64,10 @@ export function Grid() {
   const cell = cellSize(contentWidth, columns);
   const stride = cell + GUTTER;
 
-  const tiles = useMemo(() => visibleTiles(prefs, TILES), [prefs]);
-  const [menuFor, setMenuFor] = useState<TileId | null>(null);
-  const [movingId, setMovingId] = useState<TileId | null>(null);
+  const all = useMemo(() => allTiles(prefs), [prefs]);
+  const tiles = useMemo(() => visibleTiles(prefs, all), [prefs, all]);
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [movingId, setMovingId] = useState<string | null>(null);
   // The order before the move began, restored on cancel.
   const [original, setOriginal] = useState<string[] | null>(null);
 
@@ -91,7 +94,7 @@ export function Grid() {
     : undefined;
   const movingRect = movingPlaced ? rectOf(movingPlaced) : null;
 
-  const beginMove = (id: TileId) => {
+  const beginMove = (id: string) => {
     const p = placed.find((x) => x.item.id === id);
     if (!p) return;
     const r = rectOf(p);
@@ -99,7 +102,7 @@ export function Grid() {
     dragY.value = r.y;
     lastCell.value = -1;
     setMenuFor(null);
-    setOriginal(orderedTiles(prefs, TILES).map((t) => t.id));
+    setOriginal(orderedTiles(prefs, all).map((t) => t.id));
     setMovingId(id);
   };
 
@@ -122,7 +125,8 @@ export function Grid() {
     const moving = movingId;
     if (!moving) return;
     update((p) => {
-      const w = visibleTiles(p, TILES);
+      const a = allTiles(p);
+      const w = visibleTiles(p, a);
       const from = w.findIndex((t) => t.id === moving);
       if (from < 0) return {};
       const { placed: laid, rows: laidRows } = pack(w, (t) => t.span, columns);
@@ -137,7 +141,7 @@ export function Grid() {
       else return {};
       if (to === from) return {};
       const next = move(w, from, to).map((t) => t.id);
-      return { order: orderFromVisible(p, next, TILES) };
+      return { order: orderFromVisible(p, next, a) };
     });
   };
 
@@ -182,62 +186,67 @@ export function Grid() {
 
   if (!loaded) return <View style={styles.root} />;
 
-  const menuTile = menuFor ? TILES.find((t) => t.id === menuFor) : undefined;
+  const menuTile = menuFor ? all.find((t) => t.id === menuFor) : undefined;
 
   return (
     <View style={styles.root}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={styles.scroll}
         scrollEnabled={!movingId}
       >
-        <View style={{ width: contentWidth, height }}>
-          {movingId ? (
-            <Pressable
-              style={StyleSheet.absoluteFill}
-              onPress={cancelMove}
-              accessibilityLabel="Cancel move"
-            />
-          ) : null}
-          {movingRect ? <Gap rect={movingRect} /> : null}
-          {placed.map((p) => {
-            const moving = p.item.id === movingId;
-            const tile = (
-              <GridTile
-                key={p.item.id}
-                def={p.item}
-                rect={rectOf(p)}
-                moving={moving}
-                dragX={dragX}
-                dragY={dragY}
-                onPress={movingId ? cancelMove : undefined}
-                onLongPress={movingId ? undefined : () => setMenuFor(p.item.id)}
+        <Header />
+        <View style={styles.content}>
+          <View style={{ width: contentWidth, height }}>
+            {movingId ? (
+              <Pressable
+                style={StyleSheet.absoluteFill}
+                onPress={cancelMove}
+                accessibilityLabel="Cancel move"
               />
-            );
-            return moving ? (
-              <GestureDetector key={p.item.id} gesture={pan}>
-                {tile}
-              </GestureDetector>
-            ) : (
-              tile
-            );
-          })}
+            ) : null}
+            {movingRect ? <Gap rect={movingRect} /> : null}
+            {placed.map((p) => {
+              const moving = p.item.id === movingId;
+              const tile = (
+                <GridTile
+                  key={p.item.id}
+                  def={p.item}
+                  rect={rectOf(p)}
+                  moving={moving}
+                  dragX={dragX}
+                  dragY={dragY}
+                  onPress={movingId ? cancelMove : undefined}
+                  onLongPress={
+                    movingId ? undefined : () => setMenuFor(p.item.id)
+                  }
+                />
+              );
+              return moving ? (
+                <GestureDetector key={p.item.id} gesture={pan}>
+                  {tile}
+                </GestureDetector>
+              ) : (
+                tile
+              );
+            })}
+          </View>
+          {movingId ? (
+            <Text style={styles.hint}>
+              Drag to a new spot. Tap anywhere else to cancel.
+            </Text>
+          ) : (
+            <Pressable
+              onPress={() => router.push("/edit")}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.editButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.editLabel}>Edit tiles</Text>
+            </Pressable>
+          )}
         </View>
-        {movingId ? (
-          <Text style={styles.hint}>
-            Drag to a new spot. Tap anywhere else to cancel.
-          </Text>
-        ) : (
-          <Pressable
-            onPress={() => router.push("/edit")}
-            accessibilityRole="button"
-            style={({ pressed }) => [
-              styles.editButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.editLabel}>Edit tiles</Text>
-          </Pressable>
-        )}
       </ScrollView>
       {menuTile ? (
         <TileMenu
@@ -245,7 +254,14 @@ export function Grid() {
           onMove={() => beginMove(menuTile.id)}
           onHide={() => {
             setMenuFor(null);
-            update((p) => hideTile(p, menuTile.id));
+            if (menuTile.kind === "link") {
+              const entryId = menuTile.entryId;
+              update((p) => ({
+                promoted: p.promoted.filter((x) => x !== entryId),
+              }));
+            } else {
+              update((p) => hideTile(p, menuTile.id));
+            }
           }}
           onEdit={() => {
             setMenuFor(null);
@@ -294,21 +310,27 @@ function GridTile({
   const { registerTile, expand } = useExpand();
   const ref = useRef<View>(null);
 
-  useEffect(
-    () =>
-      registerTile(
-        def.id,
-        () =>
-          new Promise((resolve) => {
-            const node = ref.current;
-            if (!node) return resolve(rect);
-            node.measureInWindow((x, y, width, height) =>
-              resolve({ x, y, width, height }),
-            );
-          }),
-      ),
-    [def.id, registerTile, rect],
-  );
+  // Link tiles never expand, so the overlay never needs to find them.
+  const liveId = def.kind === "live" ? def.id : null;
+  useEffect(() => {
+    if (!liveId) return;
+    return registerTile(
+      liveId,
+      () =>
+        new Promise((resolve) => {
+          const node = ref.current;
+          if (!node) return resolve(rect);
+          node.measureInWindow((x, y, width, height) =>
+            resolve({ x, y, width, height }),
+          );
+        }),
+    );
+  }, [liveId, registerTile, rect]);
+
+  const open = () => {
+    if (def.kind === "link") Linking.openURL(def.url).catch(() => {});
+    else expand(def.id);
+  };
 
   const style = useAnimatedStyle(() => {
     if (moving) {
@@ -337,7 +359,7 @@ function GridTile({
         ref={ref}
         accessibilityRole="button"
         accessibilityLabel={def.title}
-        onPress={onPress ?? (() => expand(def.id))}
+        onPress={onPress ?? open}
         onLongPress={onLongPress}
         style={({ pressed }) => [
           styles.fill,
@@ -355,7 +377,8 @@ function GridTile({
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { alignItems: "center", padding: PADDING, paddingBottom: 140 },
+  scroll: { paddingBottom: 140 },
+  content: { alignItems: "center", padding: PADDING },
   tile: { position: "absolute", borderRadius: TILE_RADIUS, overflow: "hidden" },
   lifted: {
     shadowColor: "#000000",
