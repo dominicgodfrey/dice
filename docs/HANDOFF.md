@@ -23,7 +23,7 @@ Two codebases in one repo:
 ## Where things stand
 
 Every build phase in PLAN.md section 3 is done (Phases 0–5), plus a design
-pass and a scraping pass. 43 numbered decisions, D1–D43, all in PLAN.md
+pass and a scraping pass. 44 numbered decisions, D1–D44, all in PLAN.md
 with the alternative each beat. What remains is in WIRING.md (owner
 steps) and Phase 6 (asks that need a person).
 

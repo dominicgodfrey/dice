@@ -4,8 +4,8 @@
 // route ("/laundry"); this component watches the pathname, measures the
 // tile's rectangle, and animates a card from that rectangle to the expanded
 // rectangle, cross-fading the collapsed layout into the expanded one. Swipe
-// down, the scrim, Escape, or the back button navigate back, and the same
-// animation runs in reverse before the card unmounts.
+// down or right, the scrim, Escape, or the back button navigate back, and
+// the same animation runs in reverse before the card unmounts.
 //
 // State flows one way: route -> `active` (React state) -> `open` -> spring.
 // Effects never write shared values; only worklets do.
@@ -104,6 +104,10 @@ const SPRING = { damping: 26, stiffness: 240, mass: 1 };
 const CLOSE_DISTANCE = 120;
 const CLOSE_VELOCITY = 800;
 const REST_THRESHOLD = 0.005;
+/** Touches that start this close to the card's top edge always pull it. */
+const HANDLE_HEIGHT = 88;
+const AXIS_VERTICAL = 1;
+const AXIS_HORIZONTAL = 2;
 
 export function ExpandProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -213,10 +217,15 @@ function Overlay({
     [open],
   );
 
-  // The expanded content scrolls inside the card. The pan only takes over
-  // when that scroll is at the top, so a swipe down first scrolls back up,
-  // then pulls the card closed.
+  // The expanded content scrolls inside the card. A swipe to the right
+  // pulls the card closed from anywhere, however far the content is
+  // scrolled, because the scroll never wants that direction. A swipe down
+  // pulls it when the scroll is at the top or the touch began on the handle
+  // strip; elsewhere it scrolls, so a swipe down first scrolls back up.
   const drag = useSharedValue(0);
+  const dragX = useSharedValue(0);
+  const axis = useSharedValue(0);
+  const fromHandle = useSharedValue(false);
   const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((e) => {
     scrollY.value = e.contentOffset.y;
@@ -224,20 +233,44 @@ function Overlay({
   const nativeScroll = Gesture.Native();
   const pan = Gesture.Pan()
     .activeOffsetY(12)
+    .activeOffsetX(12)
     .simultaneousWithExternalGesture(nativeScroll)
+    .onBegin((e) => {
+      fromHandle.value = e.y < HANDLE_HEIGHT;
+    })
     .onUpdate((e) => {
-      if (scrollY.value > 1) return;
+      if (axis.value === 0) {
+        if (Math.abs(e.translationX) < 6 && Math.abs(e.translationY) < 6)
+          return;
+        axis.value =
+          Math.abs(e.translationX) > Math.abs(e.translationY)
+            ? AXIS_HORIZONTAL
+            : AXIS_VERTICAL;
+      }
+      if (axis.value === AXIS_HORIZONTAL) {
+        dragX.value = Math.max(0, e.translationX);
+        return;
+      }
+      if (scrollY.value > 1 && !fromHandle.value) return;
       drag.value = Math.max(0, e.translationY);
     })
     .onEnd((e) => {
       const pulled = drag.value;
+      const pulledX = dragX.value;
       drag.value = withSpring(0, SPRING);
+      dragX.value = withSpring(0, SPRING);
       if (
         pulled > CLOSE_DISTANCE ||
-        (pulled > 0 && e.velocityY > CLOSE_VELOCITY)
+        (pulled > 0 && e.velocityY > CLOSE_VELOCITY) ||
+        pulledX > CLOSE_DISTANCE ||
+        (pulledX > 0 && e.velocityX > CLOSE_VELOCITY)
       ) {
         scheduleOnRN(collapse);
       }
+    })
+    .onFinalize(() => {
+      axis.value = 0;
+      fromHandle.value = false;
     });
   const expandedScroll = { onScroll, gesture: nativeScroll, closePan: pan };
 
@@ -246,6 +279,8 @@ function Overlay({
   const cardStyle = useAnimatedStyle(() => {
     const p = reduceMotion ? 1 : progress.value;
     const dy = drag.value;
+    const dx = dragX.value;
+    const pull = Math.max(dy, dx);
     return {
       left: interpolate(p, [0, 1], [origin.x, dest.x]),
       top: interpolate(p, [0, 1], [origin.y, dest.y]),
@@ -255,7 +290,10 @@ function Overlay({
       opacity: reduceMotion ? progress.value : 1,
       transform: [
         { translateY: dy },
-        { scale: interpolate(dy, [0, winH], [1, 0.75], Extrapolation.CLAMP) },
+        { translateX: dx },
+        {
+          scale: interpolate(pull, [0, winH], [1, 0.75], Extrapolation.CLAMP),
+        },
       ],
     };
   }, [origin, dest, isWide, reduceMotion, winH]);
@@ -279,7 +317,12 @@ function Overlay({
   const scrimStyle = useAnimatedStyle(() => ({
     opacity:
       interpolate(progress.value, [0, 1], [0, 0.45]) *
-      interpolate(drag.value, [0, winH / 2], [1, 0], Extrapolation.CLAMP),
+      interpolate(
+        Math.max(drag.value, dragX.value),
+        [0, winH / 2],
+        [1, 0],
+        Extrapolation.CLAMP,
+      ),
   }));
 
   const def = active ? TILE_BY_ID.get(active.id) : undefined;

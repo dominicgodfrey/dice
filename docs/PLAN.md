@@ -347,6 +347,14 @@ old quad choice dropped rather than guessed at. When no room on campus
 reports a single working machine the tile says LaundryView is down, since
 that is what it means: the vendor's system, not every machine at once.
 
+**D44. A swipe to the right closes an expanded tile from anywhere.**
+Swipe down still closes when the scroll is at the top, and now also when
+the touch starts on the handle strip at the top of the card, however far
+the content is scrolled. But a scrolled page cannot tell "swipe down to
+close" from "scroll up", so the gesture that always works is the one the
+scroll never wants: right. The owner's ask was to be able to leave a tile
+regardless of how much you have scrolled or tapped inside it.
+
 ## 2. Things that need access, and the seam each stops at
 
 | Feature | Who to ask | What is built without them | What their answer unlocks |
