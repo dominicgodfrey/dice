@@ -8,9 +8,14 @@
 //	BUG_REPORT_DIR    where reports are written, default ./data/bug-reports
 //	SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, BUG_REPORT_FROM, BUG_REPORT_TO
 //	                  when set, each report is also emailed
+//	EVENTS_ICS_URLS   ICS calendars to serve as events; see internal/feeds
+//	MENUS_JSON_URL    menus JSON to serve instead of the fixture
+//	SHUTTLE_GTFS_RT_URL  GTFS-RT TripUpdates feed for BranVan arrivals
+//	TZ                the campus zone for floating ICS times, default America/New_York
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -19,6 +24,8 @@ import (
 
 	"github.com/dominicgodfrey/dice/server/internal/api"
 	"github.com/dominicgodfrey/dice/server/internal/bugreport"
+	"github.com/dominicgodfrey/dice/server/internal/feeds"
+	"github.com/dominicgodfrey/dice/server/internal/refresh"
 )
 
 func main() {
@@ -36,9 +43,28 @@ func main() {
 		log.Printf("bug reports stored in %s (no SMTP configured)", store.Dir)
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	loc, err := time.LoadLocation(env("TZ", "America/New_York"))
+	if err != nil {
+		loc = time.Local
+	}
+	live := map[string]feeds.Provider{}
+	start := func(name string, c *refresh.Cache[[]byte]) {
+		if c == nil {
+			log.Printf("%s: no live feed configured, serving the fixture", name)
+			return
+		}
+		live[name] = feeds.Start(ctx, c)
+		log.Printf("%s: live feed on, refreshing every %s", name, c.Interval)
+	}
+	start("events", feeds.Events(os.Getenv("EVENTS_ICS_URLS"), loc))
+	start("menus", feeds.Menus(os.Getenv("MENUS_JSON_URL")))
+	start("shuttle", feeds.Shuttle(os.Getenv("SHUTTLE_GTFS_RT_URL")))
+
 	srv := &http.Server{
 		Addr:              ":" + port,
-		Handler:           api.New(api.Config{AllowedOrigins: origins, BugReports: store}),
+		Handler:           api.New(api.Config{AllowedOrigins: origins, BugReports: store, Live: live}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,

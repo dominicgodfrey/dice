@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/dominicgodfrey/dice/server/internal/bugreport"
+	"github.com/dominicgodfrey/dice/server/internal/feeds"
 )
 
 func newTestHandler(t *testing.T) (http.Handler, string) {
@@ -76,6 +77,30 @@ func TestCORS(t *testing.T) {
 	}
 	if rec.Header().Get("Access-Control-Allow-Origin") != "*" {
 		t.Fatalf("missing allow-origin")
+	}
+}
+
+type fakeLive struct {
+	b  []byte
+	ok bool
+}
+
+func (f fakeLive) Get() ([]byte, bool) { return f.b, f.ok }
+
+func TestLiveOverridesFixture(t *testing.T) {
+	h := New(Config{Live: map[string]feeds.Provider{
+		"events":  fakeLive{[]byte(`{"updated":"x","events":[]}`), true},
+		"shuttle": fakeLive{nil, false},
+	}})
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/events", nil))
+	if rec.Header().Get("X-Dice-Source") != "live" || rec.Body.String() != `{"updated":"x","events":[]}` {
+		t.Fatalf("live: %s %q", rec.Header().Get("X-Dice-Source"), rec.Body.String())
+	}
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/shuttle", nil))
+	if rec.Header().Get("X-Dice-Source") != "fixture" {
+		t.Fatalf("expected fixture fallback, got %s", rec.Header().Get("X-Dice-Source"))
 	}
 }
 

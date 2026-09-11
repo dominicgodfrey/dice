@@ -1,5 +1,6 @@
-// Package api is the HTTP surface: fixtures over GET, bug reports over
-// POST, a health check, and CORS for the web build (PLAN.md D5).
+// Package api is the HTTP surface: fixtures over GET (or the live feed
+// that replaces one), bug reports over POST, a health check, and CORS for
+// the web build (PLAN.md D5, D6).
 package api
 
 import (
@@ -13,6 +14,7 @@ import (
 
 	"github.com/dominicgodfrey/dice/server/fixtures"
 	"github.com/dominicgodfrey/dice/server/internal/bugreport"
+	"github.com/dominicgodfrey/dice/server/internal/feeds"
 )
 
 const maxBody = 64 << 10
@@ -22,6 +24,9 @@ type Config struct {
 	// AllowedOrigins for CORS. "*" allows any; empty disables CORS headers.
 	AllowedOrigins []string
 	BugReports     *bugreport.Store
+	// Live feeds by fixture name. Served instead of the fixture whenever
+	// they have a value; the fixture is the fallback.
+	Live map[string]feeds.Provider
 }
 
 // New returns the root handler.
@@ -40,13 +45,22 @@ func New(cfg Config) http.Handler {
 	for _, name := range fixtures.Names() {
 		name := name
 		mux.HandleFunc("GET /api/v1/"+name, func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			if p, ok := cfg.Live[name]; ok {
+				if b, live := p.Get(); live {
+					w.Header().Set("Cache-Control", "public, max-age=30")
+					w.Header().Set("X-Dice-Source", "live")
+					_, _ = w.Write(b)
+					return
+				}
+			}
 			b, err := fixtures.Read(name)
 			if err != nil {
 				http.Error(w, "not found", http.StatusNotFound)
 				return
 			}
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.Header().Set("Cache-Control", "public, max-age=300")
+			w.Header().Set("X-Dice-Source", "fixture")
 			_, _ = w.Write(b)
 		})
 	}
