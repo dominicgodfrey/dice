@@ -41,7 +41,7 @@ export function MapCollapsed() {
           />
         ) : null}
         <Text style={[t.muted, { marginTop: 6 }]} numberOfLines={1}>
-          {campus.data.buildings.length} buildings · pinch to explore
+          Aerial view · pinch to explore
         </Text>
       </View>
     </CollapsedShell>

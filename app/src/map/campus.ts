@@ -1,64 +1,82 @@
-// Campus map data and geometry (PLAN.md D39). Pure; tested.
+// Campus map geometry (PLAN.md D39, D41): aerial imagery of campus in Web
+// Mercator, with the fixture's buildings, places and photos placed on it.
+// Pure; tested.
 
-import type { CampusData, Building } from "../sources/types";
+import type { Building, CampusData } from "../sources/types";
+import imagery from "./imagery.json";
 
 export type XY = { x: number; y: number };
 
-/** Metres east and north of the campus origin. */
-export function toLocal(data: CampusData, lat: number, lon: number): XY {
-  const k = Math.cos((data.origin.lat * Math.PI) / 180);
-  return {
-    x: (lon - data.origin.lon) * k * 111_000,
-    y: (lat - data.origin.lat) * 111_000,
-  };
+export type Imagery = {
+  xmin: number;
+  ymin: number;
+  xmax: number;
+  ymax: number;
+  width: number;
+  height: number;
+  attribution: string;
+};
+
+export const IMAGERY: Imagery = imagery;
+
+const R = 6378137;
+
+/** WGS84 to Web Mercator metres (EPSG:3857). */
+export function mercator(lat: number, lon: number): XY {
+  const x = (lon * Math.PI * R) / 180;
+  const y = R * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
+  return { x, y };
 }
 
-/** The bounds of everything on the map, in local metres, with padding. */
-export function bounds(
-  data: CampusData,
-  pad = 60,
-): { minX: number; maxX: number; minY: number; maxY: number } {
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let minY = Infinity;
-  let maxY = -Infinity;
-  const take = (p: XY, r = 0) => {
-    minX = Math.min(minX, p.x - r);
-    maxX = Math.max(maxX, p.x + r);
-    minY = Math.min(minY, p.y - r);
-    maxY = Math.max(maxY, p.y + r);
-  };
-  for (const b of data.buildings)
-    take(toLocal(data, b.lat, b.lon), Math.max(b.w, b.h) / 2);
-  for (const p of data.places) take(toLocal(data, p.lat, p.lon));
-  if (!isFinite(minX)) return { minX: -100, maxX: 100, minY: -100, maxY: 100 };
-  return {
-    minX: minX - pad,
-    maxX: maxX + pad,
-    minY: minY - pad,
-    maxY: maxY + pad,
-  };
-}
+export type Fit = {
+  /** Where the image sits inside the box, in pixels. */
+  image: { x: number; y: number; w: number; h: number };
+  /** Ground metres per pixel, roughly. */
+  pxPerM: number;
+  project: (lat: number, lon: number) => XY;
+  contains: (lat: number, lon: number) => boolean;
+};
 
 /**
- * A viewport that maps local metres to pixels, north up: fit the bounds in
- * a width×height box and return the metres-per-pixel scale and a projector.
+ * Fit the imagery inside a width×height box, keeping its aspect, and return
+ * a projector from lat/lon to pixels in that box.
  */
-export function fit(data: CampusData, width: number, height: number) {
-  const b = bounds(data);
-  const spanX = b.maxX - b.minX;
-  const spanY = b.maxY - b.minY;
-  const pxPerM = Math.min(width / spanX, height / spanY);
-  const offX = (width - spanX * pxPerM) / 2;
-  const offY = (height - spanY * pxPerM) / 2;
+export function fit(
+  width: number,
+  height: number,
+  img: Imagery = IMAGERY,
+): Fit {
+  const spanX = img.xmax - img.xmin;
+  const spanY = img.ymax - img.ymin;
+  const scale = Math.min(width / spanX, height / spanY);
+  const w = spanX * scale;
+  const h = spanY * scale;
+  const x0 = (width - w) / 2;
+  const y0 = (height - h) / 2;
+  const midLat = (mercatorToLat(img.ymin) + mercatorToLat(img.ymax)) / 2;
   const project = (lat: number, lon: number): XY => {
-    const l = toLocal(data, lat, lon);
+    const m = mercator(lat, lon);
     return {
-      x: offX + (l.x - b.minX) * pxPerM,
-      y: offY + (b.maxY - l.y) * pxPerM,
+      x: x0 + ((m.x - img.xmin) / spanX) * w,
+      y: y0 + ((img.ymax - m.y) / spanY) * h,
     };
   };
-  return { pxPerM, project, spanX, spanY };
+  const contains = (lat: number, lon: number) => {
+    const m = mercator(lat, lon);
+    return (
+      m.x >= img.xmin && m.x <= img.xmax && m.y >= img.ymin && m.y <= img.ymax
+    );
+  };
+  return {
+    image: { x: x0, y: y0, w, h },
+    pxPerM: scale / Math.cos((midLat * Math.PI) / 180),
+    project,
+    contains,
+  };
+}
+
+export function mercatorToLat(y: number): number {
+  return ((2 * Math.atan(Math.exp(y / R)) - Math.PI / 2) * 180) / Math.PI;
 }
 
 /** Which details a zoom factor reveals (D39). */
@@ -79,3 +97,8 @@ export const KIND_LABELS: Record<Building["kind"], string> = {
   admin: "Offices",
   other: "Other",
 };
+
+/** Buildings whose centre falls on the imagery. */
+export function onImage(data: CampusData, f: Fit): Building[] {
+  return data.buildings.filter((b) => f.contains(b.lat, b.lon));
+}

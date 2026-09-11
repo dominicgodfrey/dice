@@ -1,9 +1,9 @@
-// The stylised campus map (PLAN.md D39): buildings as blocks, paths as
-// labels, pinch to zoom and drag to pan. Zooming in reveals entrances, then
-// rooms and photo checkpoints. Everything is SVG drawn from the fixture.
+// The campus map (PLAN.md D39, D41): aerial imagery with names, entrances,
+// rooms and photo checkpoints drawn over it; pinch to zoom, drag to pan.
+// Zooming in reveals more.
 
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import {
   Gesture,
   GestureDetector,
@@ -18,25 +18,13 @@ import { scheduleOnRN } from "react-native-worklets";
 import Svg, { Circle, G, Rect, Text as SvgText } from "react-native-svg";
 import type { CampusData } from "../sources/types";
 import { colors, font } from "../ui/theme";
-import { detailLevel, fit } from "./campus";
-
-const KIND_FILL: Record<string, string> = {
-  academic: "rgba(255,255,255,0.22)",
-  residence: "rgba(255,255,255,0.14)",
-  dining: "rgba(255,210,140,0.35)",
-  library: "rgba(191,224,255,0.35)",
-  athletics: "rgba(160,230,190,0.3)",
-  student: "rgba(255,255,255,0.3)",
-  arts: "rgba(230,190,255,0.3)",
-  admin: "rgba(255,255,255,0.12)",
-  other: "rgba(255,255,255,0.12)",
-};
+import { detailLevel, fit, IMAGERY, onImage } from "./campus";
 
 type Props = {
   data: CampusData;
   width: number;
   height: number;
-  /** Static: no gestures, no labels below level 1. */
+  /** Static: no gestures, no labels. */
   compact?: boolean;
   /** A gesture the map's own gestures should win over (the card's swipe-to-close). */
   blocks?: GestureType;
@@ -44,6 +32,53 @@ type Props = {
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 6;
+const HALO = "rgba(10,14,25,0.85)";
+
+/** Text with a dark halo so it reads over imagery. */
+function Label({
+  x,
+  y,
+  size,
+  children,
+  anchor = "middle",
+  color = colors.onDark,
+  family = font.medium,
+}: {
+  x: number;
+  y: number;
+  size: number;
+  children: string;
+  anchor?: "start" | "middle" | "end";
+  color?: string;
+  family?: string;
+}) {
+  return (
+    <G>
+      <SvgText
+        x={x}
+        y={y}
+        fill={HALO}
+        stroke={HALO}
+        strokeWidth={3}
+        fontSize={size}
+        fontFamily={family}
+        textAnchor={anchor}
+      >
+        {children}
+      </SvgText>
+      <SvgText
+        x={x}
+        y={y}
+        fill={color}
+        fontSize={size}
+        fontFamily={family}
+        textAnchor={anchor}
+      >
+        {children}
+      </SvgText>
+    </G>
+  );
+}
 
 export function CampusMap({
   data,
@@ -52,7 +87,7 @@ export function CampusMap({
   compact = false,
   blocks,
 }: Props) {
-  const { pxPerM, project } = fit(data, width, height);
+  const f = fit(width, height);
   const [level, setLevel] = useState<1 | 2 | 3>(1);
 
   const zoom = useSharedValue(1);
@@ -61,9 +96,8 @@ export function CampusMap({
   const startZoom = useSharedValue(1);
   const startX = useSharedValue(0);
   const startY = useSharedValue(0);
-
-  // Detail follows zoom in discrete steps; tell React only when it changes.
   const lastLevel = useSharedValue<1 | 2 | 3>(1);
+
   const noteZoom = (z: number) => {
     "worklet";
     const lvl = detailLevel(z);
@@ -72,7 +106,6 @@ export function CampusMap({
       scheduleOnRN(setLevel, lvl);
     }
   };
-
   const clamp = (v: number, lo: number, hi: number) => {
     "worklet";
     return Math.min(hi, Math.max(lo, v));
@@ -123,151 +156,181 @@ export function CampusMap({
     ],
   }));
 
-  const labelSize = compact ? 0 : Math.max(8, 11 / Math.max(1, level - 0.5));
-  const svg = (
-    <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-      <Rect x={0} y={0} width={width} height={height} fill="rgba(0,0,0,0.18)" />
-      <G>
-        {data.buildings.map((b) => {
-          const c = project(b.lat, b.lon);
-          const w = b.w * pxPerM;
-          const h = b.h * pxPerM;
-          return (
-            <G key={b.id} transform={`rotate(${b.rot} ${c.x} ${c.y})`}>
-              <Rect
-                x={c.x - w / 2}
-                y={c.y - h / 2}
-                width={w}
-                height={h}
-                rx={Math.min(4, w / 6)}
-                fill={KIND_FILL[b.kind] ?? KIND_FILL.other}
-                stroke="rgba(255,255,255,0.45)"
-                strokeWidth={0.8}
-              />
-            </G>
-          );
-        })}
-      </G>
+  const buildings = onImage(data, f);
+  const labelSize = Math.max(7, 11 / Math.max(1, level - 0.4));
+  const content = (
+    <View style={{ width, height }}>
+      <Image
+        source={require("../../assets/map/campus.jpg")}
+        style={{
+          position: "absolute",
+          left: f.image.x,
+          top: f.image.y,
+          width: f.image.w,
+          height: f.image.h,
+        }}
+        resizeMode="stretch"
+        accessibilityLabel="Aerial view of campus"
+      />
       {!compact ? (
-        <G>
-          {data.buildings
-            .filter((b) => level >= 2 || Math.max(b.w, b.h) >= 50)
-            .map((b) => {
-              const c = project(b.lat, b.lon);
-              return (
-                <SvgText
-                  key={`${b.id}-l`}
-                  x={c.x}
-                  y={c.y + labelSize / 3}
-                  fill={colors.onDark}
-                  fontSize={labelSize}
-                  fontFamily={font.medium}
-                  textAnchor="middle"
-                >
-                  {b.name}
-                </SvgText>
-              );
-            })}
-          {data.places.map((p) => {
-            const c = project(p.lat, p.lon);
-            return (
-              <G key={p.id}>
-                <Circle cx={c.x} cy={c.y} r={2.5} fill={colors.onDarkMuted} />
-                {level >= 2 ? (
-                  <SvgText
-                    x={c.x + 5}
-                    y={c.y + 3}
-                    fill={colors.onDarkMuted}
-                    fontSize={labelSize * 0.9}
-                    fontFamily={font.regular}
+        <Svg
+          width={width}
+          height={height}
+          viewBox={`0 0 ${width} ${height}`}
+          style={StyleSheet.absoluteFill}
+        >
+          <G>
+            {buildings
+              .filter((b) => level >= 2 || Math.max(b.w, b.h) >= 50)
+              .map((b) => {
+                const c = f.project(b.lat, b.lon);
+                return (
+                  <Label
+                    key={b.id}
+                    x={c.x}
+                    y={c.y + labelSize / 3}
+                    size={labelSize}
                   >
-                    {p.name}
-                  </SvgText>
-                ) : null}
-              </G>
-            );
-          })}
-          {level >= 2
-            ? data.buildings.flatMap((b) =>
-                b.entrances.map((e, i) => {
-                  const c = project(e.lat, e.lon);
-                  return (
-                    <G key={`${b.id}-e${i}`}>
-                      <Circle cx={c.x} cy={c.y} r={2.2} fill="#FFD166" />
-                      {level >= 3 ? (
-                        <SvgText
+                    {b.name}
+                  </Label>
+                );
+              })}
+            {data.places
+              .filter((p) => f.contains(p.lat, p.lon))
+              .map((p) => {
+                const c = f.project(p.lat, p.lon);
+                return (
+                  <G key={p.id}>
+                    <Circle
+                      cx={c.x}
+                      cy={c.y}
+                      r={2.5}
+                      fill={colors.onDark}
+                      stroke={HALO}
+                      strokeWidth={1}
+                    />
+                    {level >= 2 ? (
+                      <Label
+                        x={c.x + 5}
+                        y={c.y + 3}
+                        size={labelSize * 0.9}
+                        anchor="start"
+                        family={font.regular}
+                      >
+                        {p.name}
+                      </Label>
+                    ) : null}
+                  </G>
+                );
+              })}
+            {level >= 2
+              ? buildings.flatMap((b) =>
+                  b.entrances.map((e, i) => {
+                    const c = f.project(e.lat, e.lon);
+                    return (
+                      <G key={`${b.id}-e${i}`}>
+                        <Circle
+                          cx={c.x}
+                          cy={c.y}
+                          r={2.2}
+                          fill="#FFD166"
+                          stroke={HALO}
+                          strokeWidth={1}
+                        />
+                        {level >= 3 ? (
+                          <Label
+                            x={c.x + 4}
+                            y={c.y + 2.5}
+                            size={labelSize * 0.75}
+                            anchor="start"
+                            color="#FFD166"
+                            family={font.regular}
+                          >
+                            {e.label}
+                          </Label>
+                        ) : null}
+                      </G>
+                    );
+                  }),
+                )
+              : null}
+            {level >= 3
+              ? buildings.flatMap((b) =>
+                  b.rooms.map((r, i) => {
+                    const c = f.project(r.lat, r.lon);
+                    return (
+                      <G key={`${b.id}-r${i}`}>
+                        <Rect
+                          x={c.x - 2}
+                          y={c.y - 2}
+                          width={4}
+                          height={4}
+                          fill="#BFE0FF"
+                          stroke={HALO}
+                          strokeWidth={1}
+                        />
+                        <Label
                           x={c.x + 4}
                           y={c.y + 2.5}
-                          fill="#FFD166"
-                          fontSize={labelSize * 0.75}
-                          fontFamily={font.regular}
+                          size={labelSize * 0.75}
+                          anchor="start"
+                          color="#BFE0FF"
+                          family={font.regular}
                         >
-                          {e.label}
-                        </SvgText>
-                      ) : null}
-                    </G>
-                  );
-                }),
-              )
-            : null}
-          {level >= 3
-            ? data.buildings.flatMap((b) =>
-                b.rooms.map((r, i) => {
-                  const c = project(r.lat, r.lon);
+                          {r.label}
+                        </Label>
+                      </G>
+                    );
+                  }),
+                )
+              : null}
+            {level >= 3
+              ? data.photos.map((p) => {
+                  const c = f.project(p.lat, p.lon);
                   return (
-                    <G key={`${b.id}-r${i}`}>
-                      <Rect
-                        x={c.x - 2}
-                        y={c.y - 2}
-                        width={4}
-                        height={4}
-                        fill="#BFE0FF"
-                      />
-                      <SvgText
-                        x={c.x + 4}
-                        y={c.y + 2.5}
-                        fill="#BFE0FF"
-                        fontSize={labelSize * 0.75}
-                        fontFamily={font.regular}
-                      >
-                        {r.label}
-                      </SvgText>
-                    </G>
+                    <Circle
+                      key={p.id}
+                      cx={c.x}
+                      cy={c.y}
+                      r={3.5}
+                      fill="#F1F1F1"
+                      stroke="#1C2333"
+                      strokeWidth={1.2}
+                    />
                   );
-                }),
-              )
-            : null}
-          {level >= 3
-            ? data.photos.map((p) => {
-                const c = project(p.lat, p.lon);
-                return (
-                  <Circle
-                    key={p.id}
-                    cx={c.x}
-                    cy={c.y}
-                    r={3}
-                    fill="#F1F1F1"
-                    stroke="#1C2333"
-                    strokeWidth={1}
-                  />
-                );
-              })
-            : null}
-        </G>
+                })
+              : null}
+          </G>
+          <Label
+            x={width - 6}
+            y={height - 6}
+            size={8}
+            anchor="end"
+            color={colors.onDarkMuted}
+            family={font.regular}
+          >
+            {IMAGERY.attribution}
+          </Label>
+        </Svg>
       ) : null}
-    </Svg>
+    </View>
   );
 
-  if (compact) return <View style={{ width, height }}>{svg}</View>;
+  if (compact) return <View style={styles.compact}>{content}</View>;
   return (
     <GestureDetector gesture={gesture}>
       <View style={[styles.viewport, { width, height }]}>
-        <Animated.View style={style}>{svg}</Animated.View>
+        <Animated.View style={style}>{content}</Animated.View>
       </View>
     </GestureDetector>
   );
 }
 
 const styles = StyleSheet.create({
-  viewport: { overflow: "hidden", borderRadius: 12 },
+  viewport: {
+    overflow: "hidden",
+    borderRadius: 12,
+    backgroundColor: "#0A0E19",
+  },
+  compact: { overflow: "hidden", borderRadius: 10 },
 });

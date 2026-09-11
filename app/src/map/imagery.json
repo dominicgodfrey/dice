@@ -1,0 +1,14 @@
+{
+  "file": "campus.jpg",
+  "source": "USGS National Map, USGSImageryOnly (public domain)",
+  "attribution": "Imagery: USGS",
+  "crs": "EPSG:3857",
+  "xmin": -7933437.587109016,
+  "ymin": 5215209.826218224,
+  "xmax": -7931704.921257544,
+  "ymax": 5216942.492069696,
+  "width": 2048,
+  "height": 2048,
+  "fetched": "2026-09-11",
+  "request": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/export?bbox=-71.2665,42.3610,-71.2525,42.3725&bboxSR=4326&size=2048,2048&imageSR=3857&format=jpg&f=image"
+}
