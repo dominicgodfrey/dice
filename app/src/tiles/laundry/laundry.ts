@@ -49,6 +49,12 @@ export function countBuilding(b: LaundryBuilding): Counts {
   return countMachines(b.rooms.flatMap((r) => r.machines));
 }
 
+/** Nothing in the room is free or running: LaundryView has no connection
+ * to it, whether or not the machines work. */
+export function noConnection(c: Counts): boolean {
+  return c.washers === 0 && c.dryers === 0;
+}
+
 /** True when no room anywhere has a machine free or running: the vendor's
  * system is down, not every machine on campus. */
 export function systemDown(buildings: readonly LaundryBuilding[]): boolean {

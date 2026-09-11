@@ -116,7 +116,7 @@ func TestParseSchoolAndRoom(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Foster Lower Apartments: 7 washers and 7 dryers, two pairs stacked.
+	// The Village: 7 washers and 7 dryers, two pairs of dryers stacked.
 	if len(machines) != 14 {
 		t.Fatalf("machines %d: %+v", len(machines), machines)
 	}

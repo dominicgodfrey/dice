@@ -1,8 +1,10 @@
-// Laundry tile (PLAN.md D18): the student's room as a grid of machines
-// collapsed; every room with per-machine state expanded. The room (one
-// building's laundry on LaundryView) is asked for on the first expand and is
-// a preference. When nothing on campus reports, LaundryView itself is down
-// and the tile says so instead of calling every machine broken.
+// Laundry tile (PLAN.md D18, D43): the student's room as a grid of machines
+// collapsed; that room alone expanded, with the free counts large enough to
+// read at a glance. The room (one building's laundry on LaundryView) is
+// asked for on the first expand and is a preference. A room whose machines
+// are all silent gets a red notice: there is no connection to them, which
+// is not the same as them being broken. When nothing on campus reports,
+// LaundryView itself is down and the tile says so.
 
 import { Pressable, StyleSheet, View } from "react-native";
 import { usePreferences } from "../../preferences/store";
@@ -12,6 +14,7 @@ import type {
   LaundryRoom,
   Machine,
 } from "../../sources/types";
+import { Icon } from "../../ui/Icon";
 import { Text } from "../../ui/Text";
 import { colors, space, type } from "../../ui/theme";
 import {
@@ -22,7 +25,14 @@ import {
   t,
   TileButton,
 } from "../shells";
-import { countMachines, countsLine, machineLabel, systemDown } from "./laundry";
+import {
+  countMachines,
+  countsLine,
+  machineLabel,
+  noConnection,
+  systemDown,
+  type Counts,
+} from "./laundry";
 
 type Found = { room: LaundryRoom; building: LaundryBuilding };
 
@@ -39,6 +49,9 @@ function useRoom(): Found | null {
 const DOWN_TITLE = "LaundryView is down";
 const DOWN_BODY =
   "No room on campus is reporting, so this is on their end, not the machines. Check in person.";
+const NO_CONNECTION = "No connection to these machines";
+const NO_CONNECTION_BODY =
+  "LaundryView isn't hearing from this room. The machines may well be working; check in person.";
 
 /** One shape per machine: washers round, dryers square; filled when free,
  * outlined with minutes when busy, dashed when broken or not reporting. */
@@ -82,6 +95,40 @@ function MachineGrid({
   );
 }
 
+/** Red, because it is the one thing here that is not the machines' fault. */
+function NoConnection({ compact }: { compact?: boolean }) {
+  return (
+    <View style={[styles.danger, compact && styles.dangerCompact]}>
+      <View style={styles.dangerHead}>
+        <Icon name="wifi-off" size={15} color={colors.onDarkDanger} />
+        <Text style={styles.dangerTitle}>{NO_CONNECTION}</Text>
+      </View>
+      {compact ? null : (
+        <Text style={styles.dangerBody}>{NO_CONNECTION_BODY}</Text>
+      )}
+    </View>
+  );
+}
+
+/** The two numbers that matter, big. */
+function FreeCounts({ c }: { c: Counts }) {
+  const stat = (n: number, label: string) => (
+    <View style={styles.stat}>
+      <Text style={[t.stat, n === 0 && styles.statZero]}>{n}</Text>
+      <Text style={t.muted}>{label}</Text>
+    </View>
+  );
+  return (
+    <View style={styles.stats}>
+      {stat(
+        c.washersFree,
+        c.washersFree === 1 ? "washer free" : "washers free",
+      )}
+      {stat(c.dryersFree, c.dryersFree === 1 ? "dryer free" : "dryers free")}
+    </View>
+  );
+}
+
 export function LaundryCollapsed() {
   const { laundry } = useSources();
   const found = useRoom();
@@ -108,9 +155,15 @@ export function LaundryCollapsed() {
   return (
     <CollapsedShell title="Laundry" icon="droplet">
       <MachineGrid machines={room.machines} size={size} />
-      <Text style={[t.bodyStrong, { marginTop: 8 }]} numberOfLines={1}>
-        {countsLine(c)}
-      </Text>
+      {noConnection(c) ? (
+        <View style={{ marginTop: 8 }}>
+          <NoConnection compact />
+        </View>
+      ) : (
+        <Text style={[t.bodyStrong, { marginTop: 8 }]} numberOfLines={1}>
+          {countsLine(c)}
+        </Text>
+      )}
       <Text style={t.muted} numberOfLines={1}>
         {room.name} · {building.name}
       </Text>
@@ -125,6 +178,8 @@ function RoomChoice({
   room: LaundryRoom;
   onPress: () => void;
 }) {
+  const c = countMachines(room.machines);
+  const silent = noConnection(c);
   return (
     <Pressable
       accessibilityRole="button"
@@ -133,7 +188,9 @@ function RoomChoice({
     >
       <View style={{ flex: 1 }}>
         <Text style={t.bodyStrong}>{room.name}</Text>
-        <Text style={t.muted}>{countsLine(countMachines(room.machines))}</Text>
+        <Text style={silent ? styles.dangerText : t.muted}>
+          {silent ? NO_CONNECTION : countsLine(c)}
+        </Text>
       </View>
       <View style={styles.choiceGrid}>
         <MachineGrid machines={room.machines} size={16} />
@@ -179,9 +236,14 @@ export function LaundryExpanded() {
     <ExpandedShell title="Laundry" subtitle={originLabel(laundry)}>
       {downNote}
       <Text style={[t.heading, { marginTop: space.lg }]}>{room.name}</Text>
-      <Text style={t.muted}>
-        {building.name} · {countsLine(c)}
-      </Text>
+      <Text style={t.muted}>{building.name}</Text>
+      {noConnection(c) ? (
+        <View style={{ marginTop: space.md }}>
+          <NoConnection />
+        </View>
+      ) : (
+        <FreeCounts c={c} />
+      )}
       <View style={{ marginTop: space.md }}>
         <MachineGrid machines={room.machines} />
       </View>
@@ -205,20 +267,6 @@ export function LaundryExpanded() {
         label="Change building"
         onPress={() => update({ laundryRoom: null })}
       />
-      {buildings.map((b) => {
-        const others = b.rooms.filter((r) => r.id !== room.id);
-        return others.length ? (
-          <Section key={b.id} title={b.name}>
-            {others.map((r) => (
-              <Row
-                key={r.id}
-                left={r.name}
-                right={countsLine(countMachines(r.machines))}
-              />
-            ))}
-          </Section>
-        ) : null;
-      })}
     </ExpandedShell>
   );
 }
@@ -239,6 +287,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     lineHeight: 12,
   },
+  stats: { flexDirection: "row", gap: space.xl, marginTop: space.md },
+  stat: {},
+  statZero: { color: colors.onDarkMuted },
   choice: {
     flexDirection: "row",
     alignItems: "center",
@@ -254,5 +305,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: colors.onDarkFill,
   },
+  danger: {
+    padding: space.md,
+    borderRadius: 12,
+    backgroundColor: colors.onDarkDangerFill,
+  },
+  dangerCompact: { paddingVertical: 6, paddingHorizontal: 10 },
+  dangerHead: { flexDirection: "row", alignItems: "center", gap: 6 },
+  dangerTitle: {
+    ...type.body,
+    color: colors.onDarkDanger,
+    fontWeight: "600",
+    flexShrink: 1,
+  },
+  dangerBody: { ...type.small, color: colors.onDarkDanger, marginTop: 4 },
+  dangerText: { ...type.small, color: colors.onDarkDanger, fontWeight: "500" },
   pressed: { opacity: 0.7 },
 });

@@ -348,6 +348,11 @@ collapsed tile shows one room, and preferences moved to version 2 with the
 old quad choice dropped rather than guessed at. When no room on campus
 reports a single working machine the tile says LaundryView is down, since
 that is what it means: the vendor's system, not every machine at once.
+*Revised:* the room page leads with the two free counts, large, and no
+longer lists every other room; a student picks their building once and
+rarely switches. A room whose machines are all silent gets a red notice
+that there is no connection to them: the fault is the link, and the
+machines may well be working.
 
 **D44. A swipe to the right closes an expanded tile from anywhere.**
 Swipe down still closes when the scroll is at the top, and now also when

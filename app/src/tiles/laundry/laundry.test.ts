@@ -1,5 +1,11 @@
 import type { Machine } from "../../sources/types";
-import { countMachines, countsLine, machineLabel, systemDown } from "./laundry";
+import {
+  countMachines,
+  countsLine,
+  machineLabel,
+  noConnection,
+  systemDown,
+} from "./laundry";
 
 const m = (
   type: Machine["type"],
@@ -74,6 +80,16 @@ describe("countsLine", () => {
         countMachines([m("washer", "offline"), m("dryer", "available")]),
       ),
     ).toBe("No washers · 1 dryer free");
+  });
+});
+
+describe("noConnection", () => {
+  it("is true only when nothing is free or running", () => {
+    expect(noConnection(countMachines([m("washer", "offline")]))).toBe(true);
+    expect(noConnection(countMachines([m("dryer", "out_of_order")]))).toBe(
+      true,
+    );
+    expect(noConnection(countMachines([m("washer", "in_use", 3)]))).toBe(false);
   });
 });
 
