@@ -14,9 +14,19 @@ export function columnsForWidth(width: number): number {
   return 4;
 }
 
-/** Side length of a 1x1 cell for a given content width and column count. */
+/** Width of a 1x1 cell for a given content width and column count. */
 export function cellSize(contentWidth: number, columns: number): number {
   return (contentWidth - GUTTER * (columns - 1)) / columns;
+}
+
+/**
+ * Height of a 1x1 cell: square on a phone, capped above so a two-wide tile
+ * on a tablet or desktop is not a huge empty square (D28, revised).
+ */
+export const UNIT_MAX_HEIGHT = 200;
+
+export function unitHeight(cell: number): number {
+  return Math.min(cell, UNIT_MAX_HEIGHT);
 }
 
 export function contentWidthFor(windowWidth: number, padding: number): number {

@@ -1,4 +1,4 @@
-import { cellSize, columnsForWidth, expandedRect } from "./layout";
+import { cellSize, columnsForWidth, expandedRect, unitHeight } from "./layout";
 
 describe("columnsForWidth", () => {
   it("follows D28", () => {
@@ -32,5 +32,12 @@ describe("expandedRect", () => {
       width: 720,
       height: 836,
     });
+  });
+});
+
+describe("unitHeight", () => {
+  it("is square on a phone and capped above", () => {
+    expect(unitHeight(174)).toBe(174);
+    expect(unitHeight(303)).toBe(200);
   });
 });

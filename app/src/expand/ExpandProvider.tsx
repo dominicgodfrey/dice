@@ -52,7 +52,13 @@ import {
   WIDE_BREAKPOINT,
   type Rect,
 } from "../grid/layout";
-import { isTileId, TILE_BY_ID, type TileId } from "../tiles/registry";
+import { usePreferences } from "../preferences/store";
+import {
+  isTileId,
+  TILE_BY_ID,
+  tileColor,
+  type TileId,
+} from "../tiles/registry";
 import { Tile } from "../tiles/Tile";
 
 type Measure = () => Promise<Rect>;
@@ -142,6 +148,7 @@ function Overlay({
   const targetId = isTileId(segment) ? segment : null;
 
   const [active, setActive] = useState<Active | null>(null);
+  const { prefs } = usePreferences();
   const { width: winW, height: winH } = useWindowDimensions();
   const reduceMotion = useReducedMotion();
   const dest = expandedRect(winW, winH);
@@ -298,7 +305,11 @@ function Overlay({
       {active && def ? (
         <GestureDetector gesture={pan}>
           <Animated.View
-            style={[styles.card, { backgroundColor: def.color }, cardStyle]}
+            style={[
+              styles.card,
+              { backgroundColor: tileColor(prefs, def) },
+              cardStyle,
+            ]}
           >
             <Animated.View
               style={[

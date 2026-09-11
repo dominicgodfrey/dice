@@ -17,6 +17,8 @@ export type Preferences = {
   homeStop: string | null;
   /** Has the first-launch gallery been shown (D11)? */
   onboarded: boolean;
+  /** Tile ID -> palette key the student picked (D36). */
+  colors: Record<string, string>;
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -28,6 +30,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   laundryBuilding: null,
   homeStop: null,
   onboarded: false,
+  colors: {},
 };
 
 /**

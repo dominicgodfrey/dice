@@ -9,7 +9,13 @@ import {
 } from "./order";
 
 const def = (id: string): TileDef =>
-  ({ id, title: id, span: { w: 1, h: 1 }, color: "#000" }) as TileDef;
+  ({
+    id,
+    title: id,
+    span: { w: 1, h: 1 },
+    icon: "clock",
+    paletteKey: "ink",
+  }) as unknown as TileDef;
 const ALL = [def("a"), def("b"), def("c"), def("d")];
 const ids = (tiles: TileDef[]) => tiles.map((t) => t.id);
 

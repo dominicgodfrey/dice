@@ -2,23 +2,21 @@
 // fill, every tile absolutely positioned from the packer's output and
 // springing to its place when the order changes.
 //
-// Long-press opens a menu (D11): Hide, Move, Edit tiles. Move lifts the
-// tile; a pan then carries it, the others flow around the gap the packer
-// leaves for it, release commits the order, and tapping anywhere else
-// flows everything back. Drag positions live in shared values written only
-// from gesture callbacks. The order being dragged is the stored order
+// Long-press opens a menu (D11): Move, Colour, Hide, Edit tiles. Move lifts
+// the tile; a pan then carries it, the others flow around the gap the
+// packer leaves for it, release commits the order, and tapping anywhere
+// else flows everything back. Drag positions live in shared values written
+// only from gesture callbacks. The order being dragged is the stored order
 // itself, updated through the store on every cell change; cancelling puts
 // back the snapshot taken when the move began.
 
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Linking,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -32,14 +30,25 @@ import { scheduleOnRN } from "react-native-worklets";
 import { Header } from "../chrome/Header";
 import { useExpand } from "../expand/ExpandProvider";
 import { usePreferences } from "../preferences/store";
-import { allTiles, type TileDef } from "../tiles/registry";
+import {
+  TILE_BY_ID,
+  TILES,
+  tileColor,
+  type TileDef,
+  type TileId,
+} from "../tiles/registry";
 import { Tile } from "../tiles/Tile";
+import { Icon } from "../ui/Icon";
+import { Text } from "../ui/Text";
+import { colors, isPaletteKey, radius, space, type } from "../ui/theme";
+import { ColorSheet } from "./ColorSheet";
 import {
   cellSize,
   columnsForWidth,
   contentWidthFor,
   GUTTER,
   TILE_RADIUS,
+  unitHeight,
   type Rect,
 } from "./layout";
 import {
@@ -62,12 +71,14 @@ export function Grid() {
   const contentWidth = contentWidthFor(winW, PADDING);
   const columns = columnsForWidth(winW);
   const cell = cellSize(contentWidth, columns);
+  const unit = unitHeight(cell);
   const stride = cell + GUTTER;
+  const strideY = unit + GUTTER;
 
-  const all = useMemo(() => allTiles(prefs), [prefs]);
-  const tiles = useMemo(() => visibleTiles(prefs, all), [prefs, all]);
-  const [menuFor, setMenuFor] = useState<string | null>(null);
-  const [movingId, setMovingId] = useState<string | null>(null);
+  const tiles = useMemo(() => visibleTiles(prefs, TILES), [prefs]);
+  const [menuFor, setMenuFor] = useState<TileId | null>(null);
+  const [colorFor, setColorFor] = useState<TileId | null>(null);
+  const [movingId, setMovingId] = useState<TileId | null>(null);
   // The order before the move began, restored on cancel.
   const [original, setOriginal] = useState<string[] | null>(null);
 
@@ -75,12 +86,12 @@ export function Grid() {
     () => pack(tiles, (t) => t.span, columns),
     [tiles, columns],
   );
-  const height = Math.max(rows * cell + (rows - 1) * GUTTER, cell);
+  const height = Math.max(rows * unit + (rows - 1) * GUTTER, unit);
   const rectOf = (p: Placed<TileDef>): Rect => ({
     x: p.x * stride,
-    y: p.y * stride,
+    y: p.y * strideY,
     width: p.w * cell + (p.w - 1) * GUTTER,
-    height: p.h * cell + (p.h - 1) * GUTTER,
+    height: p.h * unit + (p.h - 1) * GUTTER,
   });
 
   const dragX = useSharedValue(0);
@@ -94,7 +105,7 @@ export function Grid() {
     : undefined;
   const movingRect = movingPlaced ? rectOf(movingPlaced) : null;
 
-  const beginMove = (id: string) => {
+  const beginMove = (id: TileId) => {
     const p = placed.find((x) => x.item.id === id);
     if (!p) return;
     const r = rectOf(p);
@@ -102,7 +113,7 @@ export function Grid() {
     dragY.value = r.y;
     lastCell.value = -1;
     setMenuFor(null);
-    setOriginal(orderedTiles(prefs, all).map((t) => t.id));
+    setOriginal(orderedTiles(prefs, TILES).map((t) => t.id));
     setMovingId(id);
   };
 
@@ -125,8 +136,7 @@ export function Grid() {
     const moving = movingId;
     if (!moving) return;
     update((p) => {
-      const a = allTiles(p);
-      const w = visibleTiles(p, a);
+      const w = visibleTiles(p, TILES);
       const from = w.findIndex((t) => t.id === moving);
       if (from < 0) return {};
       const { placed: laid, rows: laidRows } = pack(w, (t) => t.span, columns);
@@ -141,7 +151,7 @@ export function Grid() {
       else return {};
       if (to === from) return {};
       const next = move(w, from, to).map((t) => t.id);
-      return { order: orderFromVisible(p, next, a) };
+      return { order: orderFromVisible(p, next, TILES) };
     });
   };
 
@@ -159,7 +169,7 @@ export function Grid() {
       const cx = dragX.value + movingW / 2;
       const cy = dragY.value + movingH / 2;
       const col = Math.min(columns - 1, Math.max(0, Math.floor(cx / stride)));
-      const row = Math.max(0, Math.floor(cy / stride));
+      const row = Math.max(0, Math.floor(cy / strideY));
       const key = row * columns + col;
       if (key !== lastCell.value) {
         lastCell.value = key;
@@ -170,23 +180,29 @@ export function Grid() {
       scheduleOnRN(finishMove);
     });
 
-  // Escape cancels a move or closes the menu on web.
+  // Escape cancels a move or closes a sheet on web.
   useEffect(() => {
-    if (Platform.OS !== "web" || (!movingId && !menuFor)) return;
+    if (Platform.OS !== "web" || (!movingId && !menuFor && !colorFor)) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       setMenuFor(null);
+      setColorFor(null);
       if (original) update({ order: original });
       setOriginal(null);
       setMovingId(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [movingId, menuFor, original, update]);
+  }, [movingId, menuFor, colorFor, original, update]);
 
   if (!loaded) return <View style={styles.root} />;
 
-  const menuTile = menuFor ? all.find((t) => t.id === menuFor) : undefined;
+  const menuTile = menuFor ? TILE_BY_ID.get(menuFor) : undefined;
+  const colorTile = colorFor ? TILE_BY_ID.get(colorFor) : undefined;
+  const chosenRaw = colorTile ? prefs.colors[colorTile.id] : undefined;
+  const chosenKey = isPaletteKey(chosenRaw)
+    ? chosenRaw
+    : (colorTile?.paletteKey ?? "ink");
 
   return (
     <View style={styles.root}>
@@ -211,6 +227,7 @@ export function Grid() {
                 <GridTile
                   key={p.item.id}
                   def={p.item}
+                  color={tileColor(prefs, p.item)}
                   rect={rectOf(p)}
                   moving={moving}
                   dragX={dragX}
@@ -243,6 +260,7 @@ export function Grid() {
                 pressed && styles.pressed,
               ]}
             >
+              <Icon name="sliders" size={15} color={colors.muted} />
               <Text style={styles.editLabel}>Edit tiles</Text>
             </Pressable>
           )}
@@ -252,22 +270,30 @@ export function Grid() {
         <TileMenu
           title={menuTile.title}
           onMove={() => beginMove(menuTile.id)}
+          onColor={() => {
+            setMenuFor(null);
+            setColorFor(menuTile.id);
+          }}
           onHide={() => {
             setMenuFor(null);
-            if (menuTile.kind === "link") {
-              const entryId = menuTile.entryId;
-              update((p) => ({
-                promoted: p.promoted.filter((x) => x !== entryId),
-              }));
-            } else {
-              update((p) => hideTile(p, menuTile.id));
-            }
+            update((p) => hideTile(p, menuTile.id));
           }}
           onEdit={() => {
             setMenuFor(null);
             router.push("/edit");
           }}
           onClose={() => setMenuFor(null)}
+        />
+      ) : null}
+      {colorTile ? (
+        <ColorSheet
+          title={colorTile.title}
+          current={chosenKey}
+          onPick={(key) => {
+            update((p) => ({ colors: { ...p.colors, [colorTile.id]: key } }));
+            setColorFor(null);
+          }}
+          onClose={() => setColorFor(null)}
         />
       ) : null}
     </View>
@@ -290,6 +316,7 @@ function Gap({ rect }: { rect: Rect }) {
 
 type GridTileProps = {
   def: TileDef;
+  color: string;
   rect: Rect;
   moving: boolean;
   dragX: { value: number };
@@ -300,6 +327,7 @@ type GridTileProps = {
 
 function GridTile({
   def,
+  color,
   rect,
   moving,
   dragX,
@@ -310,27 +338,21 @@ function GridTile({
   const { registerTile, expand } = useExpand();
   const ref = useRef<View>(null);
 
-  // Link tiles never expand, so the overlay never needs to find them.
-  const liveId = def.kind === "live" ? def.id : null;
-  useEffect(() => {
-    if (!liveId) return;
-    return registerTile(
-      liveId,
-      () =>
-        new Promise((resolve) => {
-          const node = ref.current;
-          if (!node) return resolve(rect);
-          node.measureInWindow((x, y, width, height) =>
-            resolve({ x, y, width, height }),
-          );
-        }),
-    );
-  }, [liveId, registerTile, rect]);
-
-  const open = () => {
-    if (def.kind === "link") Linking.openURL(def.url).catch(() => {});
-    else expand(def.id);
-  };
+  useEffect(
+    () =>
+      registerTile(
+        def.id,
+        () =>
+          new Promise((resolve) => {
+            const node = ref.current;
+            if (!node) return resolve(rect);
+            node.measureInWindow((x, y, width, height) =>
+              resolve({ x, y, width, height }),
+            );
+          }),
+      ),
+    [def.id, registerTile, rect],
+  );
 
   const style = useAnimatedStyle(() => {
     if (moving) {
@@ -340,7 +362,7 @@ function GridTile({
         width: rect.width,
         height: rect.height,
         zIndex: 10,
-        transform: [{ scale: withSpring(1.05, SPRING) }],
+        transform: [{ scale: withSpring(1.04, SPRING) }],
       };
     }
     return {
@@ -359,14 +381,11 @@ function GridTile({
         ref={ref}
         accessibilityRole="button"
         accessibilityLabel={def.title}
-        onPress={onPress ?? open}
+        onPress={onPress ?? (() => expand(def.id))}
         onLongPress={onLongPress}
         style={({ pressed }) => [
           styles.fill,
-          {
-            backgroundColor: def.color,
-            opacity: pressed && !moving ? 0.92 : 1,
-          },
+          { backgroundColor: color, opacity: pressed && !moving ? 0.92 : 1 },
         ]}
       >
         <Tile def={def} expanded={false} />
@@ -376,7 +395,7 @@ function GridTile({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: colors.bg },
   scroll: { paddingBottom: 140 },
   content: { alignItems: "center", padding: PADDING },
   tile: { position: "absolute", borderRadius: TILE_RADIUS, overflow: "hidden" },
@@ -393,16 +412,21 @@ const styles = StyleSheet.create({
     borderRadius: TILE_RADIUS,
     borderWidth: 2,
     borderStyle: "dashed",
-    borderColor: "#c8c8c8",
+    borderColor: colors.faint,
   },
-  hint: { marginTop: 20, color: "#666666", fontSize: 14 },
+  hint: { ...type.small, marginTop: space.xl, color: colors.muted },
   editButton: {
-    marginTop: 20,
-    paddingHorizontal: 18,
+    marginTop: space.xl,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: "#f0f0f0",
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
-  editLabel: { color: "#333333", fontSize: 15, fontWeight: "600" },
+  editLabel: { ...type.small, color: colors.muted, fontWeight: "500" },
   pressed: { opacity: 0.7 },
 });
