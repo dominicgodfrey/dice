@@ -10,6 +10,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { AccountProvider } from "../src/account/AccountProvider";
 import { initObservability, noteRoute } from "../src/observability";
 import { PreferencesProvider } from "../src/preferences/store";
 import { colors } from "../src/ui/theme";
@@ -44,20 +45,23 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
       <PreferencesProvider>
-        <StatusBar style="dark" />
-        <RouteNotes />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.bg },
-          }}
-        >
-          <Stack.Screen name="(grid)" />
-          <Stack.Screen name="edit" options={{ presentation: "modal" }} />
-          <Stack.Screen name="search" options={{ presentation: "modal" }} />
-          <Stack.Screen name="bug" options={{ presentation: "modal" }} />
-          <Stack.Screen name="emergency" />
-        </Stack>
+        <AccountProvider>
+          <StatusBar style="dark" />
+          <RouteNotes />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.bg },
+            }}
+          >
+            <Stack.Screen name="(grid)" />
+            <Stack.Screen name="edit" options={{ presentation: "modal" }} />
+            <Stack.Screen name="search" options={{ presentation: "modal" }} />
+            <Stack.Screen name="bug" options={{ presentation: "modal" }} />
+            <Stack.Screen name="account" options={{ presentation: "modal" }} />
+            <Stack.Screen name="emergency" />
+          </Stack>
+        </AccountProvider>
       </PreferencesProvider>
     </GestureHandlerRootView>
   );

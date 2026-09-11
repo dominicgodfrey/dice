@@ -15,9 +15,11 @@ export default function Privacy() {
       </P>
       <H>Accounts</H>
       <P>
-        There are none yet. When accounts arrive they will be limited to
-        brandeis.edu addresses and will hold only the settings above, so they
-        can follow you between devices.
+        Signing in is optional and only for brandeis.edu addresses. We email you
+        a link; there is no password. An account holds your email address and a
+        copy of the settings above, so they follow you between devices, and
+        nothing else. Signing out on a device removes its session; the settings
+        stay on the server until you ask us to delete the account.
       </P>
       <H>Location</H>
       <P>

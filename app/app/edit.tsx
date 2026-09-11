@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hideTile, showTile } from "../src/grid/order";
+import { useAccount } from "../src/account/AccountProvider";
 import { usePreferences } from "../src/preferences/store";
 import { PROMOTABLE } from "../src/search/entries";
 import { linkEntries, toggleLink } from "../src/tiles/links/links";
@@ -18,6 +19,7 @@ export default function EditTiles() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { prefs, update } = usePreferences();
+  const account = useAccount();
   const hidden = new Set(prefs.hidden);
   const links = new Set(linkEntries(prefs).map((e) => e.id));
 
@@ -101,6 +103,28 @@ export default function EditTiles() {
               </Pressable>
             );
           })}
+        </View>
+
+        <Text style={styles.section}>Account</Text>
+        <Text style={styles.subtitle}>
+          {account.status === "in"
+            ? `Signed in as ${account.email}. Your layout follows you to any device.`
+            : "Sign in with your Brandeis email to keep this layout on every device."}
+        </Text>
+        <View style={styles.card}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push("/account")}
+            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+          >
+            <View style={styles.swatchNeutral}>
+              <Icon name="user" size={16} color={colors.text} />
+            </View>
+            <Text style={styles.rowTitle}>
+              {account.status === "in" ? "Manage account" : "Sign in"}
+            </Text>
+            <Icon name="chevron-right" size={18} color={colors.faint} />
+          </Pressable>
         </View>
 
         <Pressable

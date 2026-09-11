@@ -160,6 +160,14 @@ export const ENTRIES: readonly SearchEntry[] = [
     action: { kind: "route", route: "/bug" },
   },
   {
+    id: "account",
+    title: "Account",
+    keywords: ["sign in", "login", "sync", "devices", "email"],
+    icon: "user",
+    subtitle: "Keep your home screen on every device",
+    action: { kind: "route", route: "/account" },
+  },
+  {
     id: "privacy",
     title: "Privacy policy",
     keywords: ["data", "tracking", "analytics"],
