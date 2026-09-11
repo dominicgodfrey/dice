@@ -41,6 +41,22 @@ Tick items here as you do them; the code side of each is already built.
       SMTP credentials in the server environment above. The same account
       sends the magic links in Phase 5.
 
+## Accounts (PLAN.md D20)
+
+- [ ] **Postgres.** Any managed Postgres (Neon, Supabase's database,
+      Fly Postgres, Railway) on a free tier. Set `DATABASE_URL` on the
+      server; it creates its tables on start. Without it sign-ins live in
+      memory and vanish on restart.
+- [ ] **`APP_URL`** on the server: the demo's public URL, so magic links
+      point at it. Also `MAIL_FROM` if the sender should differ from the
+      SMTP user. Sign-in mail needs the SMTP relay from the Backend section;
+      until then the server logs each link instead of sending it, and with
+      `AUTH_ECHO_LINKS=1` (development only) also returns it to the app.
+- [ ] **Native deep links**, later, so a magic link opened on a phone lands
+      in the installed app: Apple associated domains and Android app links
+      for `/signin` on the demo domain. Until then links open the web app,
+      which also works.
+
 ## Observability (PLAN.md D21)
 
 - [ ] **Sentry.** Create a project of type React Native at sentry.io, copy
@@ -94,7 +110,19 @@ Each is a few minutes against the real site. The code marks each spot.
       best guess. Set `verified` to true when checked; add any venue I
       missed. After editing, run `npm run sync-fixtures` in `app/`.
 
+## Map (PLAN.md D39)
+
+- [ ] **Correct the building footprints** in `server/fixtures/campus.json`:
+      centre, width, height and rotation are approximate. A walk with a
+      phone, or tracing a satellite view, fixes them. Add entrances and
+      rooms you care about; add photo checkpoints (`photos`) as you take
+      them. Then `npm run sync-fixtures` in `app/`.
+
 ## Before students see it
+
+- [ ] **Store screenshots**, taken on a real iPhone and Android phone once
+      the look has settled. The icon, splash and favicon are in
+      `app/assets`; the privacy URL is the deployed `/privacy`.
 
 - [ ] **Domain**, if you want one instead of the `pages.dev` hostname.
       Point it at Pages; put the API on a subdomain of it.

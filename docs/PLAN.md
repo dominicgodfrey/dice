@@ -296,6 +296,16 @@ recomputes the sky for where you are instead of campus. Both stay on the
 phone. The catalog is from memory and good to a fraction of a degree; a
 proper catalog can replace it without touching the chart.
 
+**D39. The campus map is a tile.** *Settles the PRD's "map + photo
+checkpoints".* A 1×1 Map tile shows a still of campus; expanded, a stylised
+SVG map drawn from a fixture of building footprints, with pinch to zoom,
+drag to pan and double-tap to step in. Zooming in reveals entrances, then
+rooms and photo checkpoints, so the same map serves "where is Kutz" and
+"which door". Footprints are rectangles from approximate coordinates and
+need correcting against a real map; photos are added to the fixture as
+they are taken. A real basemap was rejected: it needs a key, it does not
+look like the rest of the app, and campus is small enough to draw.
+
 ## 2. Things that need access, and the seam each stops at
 
 | Feature | Who to ask | What is built without them | What their answer unlocks |
@@ -383,14 +393,18 @@ run in parallel; phases mostly cannot.
 
 ### Phase 5: accounts and the rest that needs nobody
 
-- [ ] Postgres; magic-link sign-in gated on brandeis.edu; preferences sync as
-      one blob (D20).
-- [ ] Map framework: stylized SVG, zoom levels revealing entrances and rooms;
-      photo checkpoints added as photos are taken.
-- [ ] Links to LibCal, 25Live and the facilities work-order form; native
-      LibCal grid if a public availability endpoint turns out to exist.
-- [ ] Store submission assets: icon without university marks, screenshots,
-      the privacy URL.
+- [x] Postgres; magic-link sign-in gated on brandeis.edu; preferences sync as
+      one blob (D20). *Postgres, the app URL and the mail relay are owner
+      steps; without them the server runs in memory and logs the links.*
+- [x] Map framework: stylized SVG, zoom levels revealing entrances and rooms;
+      photo checkpoints added as photos are taken (D39). *Footprints need
+      correcting; see WIRING.md.*
+- [x] Links to LibCal, 25Live and the facilities work-order form (Phase 2);
+      native LibCal grid still waits on whether a public availability
+      endpoint exists.
+- [~] Store submission assets: icon without university marks, splash and
+      favicon are done; screenshots need real devices; the privacy URL is
+      the deployed /privacy route.
 
 ### Phase 6: asks
 
