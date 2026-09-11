@@ -1,0 +1,269 @@
+{
+  "updated": "2026-09-11",
+  "verified": false,
+  "note": "Hand-maintained (PLAN.md D16). Hours are best guesses until someone checks them against brandeis.edu; set verified to true when done. Weekday keys are mon..sun; each is a list of [open, close] ranges in 24h local time. Exceptions override a whole day.",
+  "venues": [
+    {
+      "id": "sherman",
+      "name": "Sherman Dining Hall",
+      "category": "dining",
+      "location": "Sherman Function Hall, Massell Quad",
+      "hours": {
+        "mon": [["07:30", "20:00"]],
+        "tue": [["07:30", "20:00"]],
+        "wed": [["07:30", "20:00"]],
+        "thu": [["07:30", "20:00"]],
+        "fri": [["07:30", "20:00"]],
+        "sat": [["10:00", "19:30"]],
+        "sun": [["10:00", "19:30"]]
+      },
+      "meals": {
+        "weekday": [
+          { "name": "Breakfast", "start": "07:30", "end": "10:30" },
+          { "name": "Lunch", "start": "11:00", "end": "14:30" },
+          { "name": "Dinner", "start": "16:30", "end": "20:00" }
+        ],
+        "weekend": [
+          { "name": "Brunch", "start": "10:00", "end": "14:30" },
+          { "name": "Dinner", "start": "16:30", "end": "19:30" }
+        ]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "usdan",
+      "name": "Lower Usdan Dining Hall",
+      "category": "dining",
+      "location": "Usdan Student Center, lower level",
+      "hours": {
+        "mon": [["07:30", "21:00"]],
+        "tue": [["07:30", "21:00"]],
+        "wed": [["07:30", "21:00"]],
+        "thu": [["07:30", "21:00"]],
+        "fri": [["07:30", "20:00"]],
+        "sat": [["10:30", "20:00"]],
+        "sun": [["10:30", "21:00"]]
+      },
+      "meals": {
+        "weekday": [
+          { "name": "Breakfast", "start": "07:30", "end": "10:30" },
+          { "name": "Lunch", "start": "11:00", "end": "15:00" },
+          { "name": "Dinner", "start": "16:30", "end": "21:00" }
+        ],
+        "weekend": [
+          { "name": "Brunch", "start": "10:30", "end": "15:00" },
+          { "name": "Dinner", "start": "16:30", "end": "20:00" }
+        ]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "starbucks",
+      "name": "Starbucks",
+      "category": "cafe",
+      "location": "Farber Library",
+      "hours": {
+        "mon": [["07:30", "23:00"]],
+        "tue": [["07:30", "23:00"]],
+        "wed": [["07:30", "23:00"]],
+        "thu": [["07:30", "23:00"]],
+        "fri": [["07:30", "18:00"]],
+        "sat": [["10:00", "18:00"]],
+        "sun": [["10:00", "23:00"]]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "dunkin",
+      "name": "Dunkin'",
+      "category": "cafe",
+      "location": "Usdan Student Center",
+      "hours": {
+        "mon": [["07:30", "22:00"]],
+        "tue": [["07:30", "22:00"]],
+        "wed": [["07:30", "22:00"]],
+        "thu": [["07:30", "22:00"]],
+        "fri": [["07:30", "17:00"]],
+        "sat": [["10:00", "17:00"]],
+        "sun": [["10:00", "22:00"]]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "einstein",
+      "name": "Einstein Bros. Bagels",
+      "category": "cafe",
+      "location": "Shapiro Campus Center",
+      "hours": {
+        "mon": [["07:30", "16:00"]],
+        "tue": [["07:30", "16:00"]],
+        "wed": [["07:30", "16:00"]],
+        "thu": [["07:30", "16:00"]],
+        "fri": [["07:30", "15:00"]],
+        "sat": [],
+        "sun": []
+      },
+      "exceptions": []
+    },
+    {
+      "id": "hoot",
+      "name": "The Hoot Market",
+      "category": "cafe",
+      "location": "Village Residence Hall",
+      "hours": {
+        "mon": [["11:00", "01:00"]],
+        "tue": [["11:00", "01:00"]],
+        "wed": [["11:00", "01:00"]],
+        "thu": [["11:00", "01:00"]],
+        "fri": [["11:00", "01:00"]],
+        "sat": [["12:00", "01:00"]],
+        "sun": [["12:00", "01:00"]]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "goldfarb",
+      "name": "Goldfarb Library",
+      "category": "library",
+      "location": "Goldfarb and Farber",
+      "hours": {
+        "mon": [["08:00", "01:00"]],
+        "tue": [["08:00", "01:00"]],
+        "wed": [["08:00", "01:00"]],
+        "thu": [["08:00", "01:00"]],
+        "fri": [["08:00", "22:00"]],
+        "sat": [["10:00", "22:00"]],
+        "sun": [["10:00", "01:00"]]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "gosman",
+      "name": "Gosman Sports and Convocation Center",
+      "category": "gym",
+      "location": "Gosman",
+      "hours": {
+        "mon": [["06:00", "23:00"]],
+        "tue": [["06:00", "23:00"]],
+        "wed": [["06:00", "23:00"]],
+        "thu": [["06:00", "23:00"]],
+        "fri": [["06:00", "21:00"]],
+        "sat": [["09:00", "21:00"]],
+        "sun": [["09:00", "23:00"]]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "health",
+      "name": "Health Center",
+      "category": "office",
+      "location": "Golding Health Center",
+      "hours": {
+        "mon": [["09:00", "17:00"]],
+        "tue": [["09:00", "17:00"]],
+        "wed": [["09:00", "17:00"]],
+        "thu": [["09:00", "17:00"]],
+        "fri": [["09:00", "17:00"]],
+        "sat": [],
+        "sun": []
+      },
+      "exceptions": []
+    },
+    {
+      "id": "bcc",
+      "name": "Brandeis Counseling Center",
+      "category": "office",
+      "location": "Mailman House",
+      "hours": {
+        "mon": [["09:00", "17:00"]],
+        "tue": [["09:00", "17:00"]],
+        "wed": [["09:00", "17:00"]],
+        "thu": [["09:00", "17:00"]],
+        "fri": [["09:00", "17:00"]],
+        "sat": [],
+        "sun": []
+      },
+      "exceptions": []
+    },
+    {
+      "id": "registrar",
+      "name": "Registrar",
+      "category": "office",
+      "location": "Kutz Hall",
+      "hours": {
+        "mon": [["09:00", "17:00"]],
+        "tue": [["09:00", "17:00"]],
+        "wed": [["09:00", "17:00"]],
+        "thu": [["09:00", "17:00"]],
+        "fri": [["09:00", "17:00"]],
+        "sat": [],
+        "sun": []
+      },
+      "exceptions": []
+    },
+    {
+      "id": "sfs",
+      "name": "Student Financial Services",
+      "category": "office",
+      "location": "Usdan Student Center",
+      "hours": {
+        "mon": [["09:00", "17:00"]],
+        "tue": [["09:00", "17:00"]],
+        "wed": [["09:00", "17:00"]],
+        "thu": [["09:00", "17:00"]],
+        "fri": [["09:00", "17:00"]],
+        "sat": [],
+        "sun": []
+      },
+      "exceptions": []
+    },
+    {
+      "id": "hiatt",
+      "name": "Hiatt Career Center",
+      "category": "office",
+      "location": "Usdan Student Center",
+      "hours": {
+        "mon": [["09:00", "17:00"]],
+        "tue": [["09:00", "17:00"]],
+        "wed": [["09:00", "17:00"]],
+        "thu": [["09:00", "17:00"]],
+        "fri": [["09:00", "17:00"]],
+        "sat": [],
+        "sun": []
+      },
+      "exceptions": []
+    },
+    {
+      "id": "mailroom",
+      "name": "Mailroom",
+      "category": "office",
+      "location": "Usdan Student Center",
+      "hours": {
+        "mon": [["09:00", "17:00"]],
+        "tue": [["09:00", "17:00"]],
+        "wed": [["09:00", "17:00"]],
+        "thu": [["09:00", "17:00"]],
+        "fri": [["09:00", "17:00"]],
+        "sat": [["10:00", "14:00"]],
+        "sun": []
+      },
+      "exceptions": []
+    },
+    {
+      "id": "campuscard",
+      "name": "Campus Card Office",
+      "category": "office",
+      "location": "Kutz Hall",
+      "hours": {
+        "mon": [["09:00", "17:00"]],
+        "tue": [["09:00", "17:00"]],
+        "wed": [["09:00", "17:00"]],
+        "thu": [["09:00", "17:00"]],
+        "fri": [["09:00", "17:00"]],
+        "sat": [],
+        "sun": []
+      },
+      "exceptions": []
+    }
+  ]
+}
