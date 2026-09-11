@@ -71,8 +71,9 @@ set, the server refreshes it on a schedule and serves the last good copy.
       shape (see `server/fixtures/menus.json`) can be set as
       `MENUS_JSON_URL` and the Food tile goes live.
 - [ ] **BranVan feed.** When Transportation shares the TripShot GTFS-RT
-      TripUpdates URL, set `SHUTTLE_GTFS_RT_URL`. Refreshed every 30
-      seconds. Their stop and route IDs will differ from the fixture's, so
+      TripUpdates URL, set `SHUTTLE_GTFS_RT_URL`, and the VehiclePositions
+      URL as `SHUTTLE_GTFS_RT_VEHICLES_URL` so the vans show on the route.
+      Refreshed every 30 seconds. Their stop and route IDs will differ from the fixture's, so
       update `server/fixtures/shuttle.json` to their IDs (from TripShot's
       static GTFS) at the same time. To demo the parser to them first:
 

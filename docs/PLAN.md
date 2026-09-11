@@ -221,7 +221,9 @@ over the dimmed grid, which reads as a modal without a second code path.
 
 **D28. Grid values.** Two columns under 768px, three to 1024px, four above.
 A 1×1 unit is as tall as a column is wide. 12px gutter. Content is capped at
-1200px wide on desktop and centred.
+1200px wide on desktop and centred. *Revised in the design pass:* the unit
+height is capped at 200px, so on anything wider than a phone a two-wide
+tile is a landscape card rather than a large, mostly empty square.
 
 **D29. An expanded tile is a route.** Expanding Laundry navigates to
 `/laundry` as an Expo Router modal route that the shared-element animation
@@ -245,12 +247,54 @@ honoured: when the OS setting is on, expansion cross-fades instead of morphing.
 
 **D33. Palette and type scale are chosen in the first Phase 1 pull request,
 not up front.** System font. One accent per tile category. Decided with a
-real tile on a real phone rather than in a document.
+real tile on a real phone rather than in a document. *Superseded by D37.*
 
 **D34. CI on every push: ESLint, TypeScript, Jest, `go vet`, `go test`.**
 Grid packing and preference migrations are pure functions and get tests from
 the start. A Playwright smoke test on the exported web build is added after
 Phase 1, once there is a grid to click.
+
+### Design pass (2026-09-11, after the first full build)
+
+The owner's review of the first complete build: the look was bland and
+"vibe-coded", link tiles cluttered the grid, tiles were text-only, and the
+Sky tile did not do what it was for. These decisions answer that.
+
+**D35. One Links tile replaces per-link tiles.** *Revises D12.* A 2×1 tile
+shows the student's links as a grid of icons that resize to fill it (one
+row up to four, two rows beyond), each opening its URL on tap. Expanded, it
+lists every link that can sit on it with a toggle. A new student sees four
+defaults (Moodle, Workday, CampusGroups, Grubhub) until they choose. Search
+results and the gallery add to this tile instead of creating tiles. One
+tile per link made the grid a launcher by default, the opposite of D12's
+intent.
+
+**D36. Tile colours come from a fixed palette and the student can change
+them.** Eight deep, muted colours (Ink, Ocean, Teal, Moss, Amber, Clay,
+Plum, Slate), all with white text, so any choice stays legible and the grid
+stays coherent. Each tile has a default; the long-press menu gains Colour
+and a swatch sheet; the choice is a preference (`colors`). Free colour
+pickers were rejected: they produce grids nobody would ship.
+
+**D37. A design system: Inter, tokens, icons.** *Supersedes D33.* Inter at
+four weights, loaded before first render. One neutral ground, white
+surfaces with hairline borders, a type scale of six sizes, 4px spacing,
+16px tile radius. Feather icons everywhere emoji were. Uppercase tracking,
+gradients on controls and candy colours are out. The rule for anything
+new: if it would look at home in a system settings screen, it is right.
+
+**D38. The Sky tile is a star chart.** *Extends D17.* What it was for:
+knowing what is above Brandeis right now. Layer 2 is now a chart of the
+whole sky, zenith at the centre and horizon at the rim, drawn as seen
+looking up: about 180 catalogued stars sized by brightness, figures for 34
+constellations, the moon and planets, a compass rim. Collapsed, a small
+chart plus the constellations highest up; expanded, the labelled chart,
+the constellations and planets with direction and altitude, and sunrise,
+sunset and moon phase. Layer 3 stays behind two buttons: the phone's
+compass turns the chart to face the way you do, and "use my location"
+recomputes the sky for where you are instead of campus. Both stay on the
+phone. The catalog is from memory and good to a fraction of a degree; a
+proper catalog can replace it without touching the chart.
 
 ## 2. Things that need access, and the seam each stops at
 
@@ -264,6 +308,9 @@ Phase 1, once there is a grid to click.
 | NFC card | Card vendor / Brandeis | Nothing | Link to mobile credential if it appears |
 
 ## 3. Build order
+
+Phases 0 through 4 are built. The design pass (D35–D38) is applied across
+them.
 
 Each step ends with something a teammate can open. Steps within a phase can
 run in parallel; phases mostly cannot.
