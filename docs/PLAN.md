@@ -306,15 +306,38 @@ need correcting against a real map; photos are added to the fixture as
 they are taken. A real basemap was rejected: it needs a key, it does not
 look like the rest of the app, and campus is small enough to draw.
 
+**D40. Everything public is scraped; only what is gated waits on an ask.**
+*Revises section 2 and the Phase 4 menu item.* A survey of the live
+services found most of the data in the open: the dining site
+(brandeishospitality.com) publishes each venue's hours for a date as data
+attributes and each dining hall's menu as tabs of stations and items;
+CSC's LaundryView has an unauthenticated JSON API listing every Brandeis
+room and each machine's state; the library's LibCal hours API is public;
+the CampusGroups school-wide calendar and the registrar's academic
+calendar are public ICS feeds. The server scrapes all of these on a
+schedule behind the same refresh cache as any feed, so a site change
+degrades to the fixture, and each parser is tested against a saved copy
+of the real page so the change shows up as a failing test. Still gated:
+the TripShot shuttle feed, which has no public endpoint.
+
+**D41. The map is aerial imagery, not drawn footprints.** *Revises D39.*
+USGS National Map imagery is public domain and available as a single
+export for a bounding box, so the campus is one 2048px JPEG in the bundle
+with its exact Web Mercator extent recorded beside it. Names, entrances,
+rooms and photo checkpoints are drawn over it by projecting their
+coordinates; the footprint rectangles are no longer drawn. Setup is one
+HTTP request, and the result looks like the place. Photo checkpoints for
+a street-level "where do I go" view come later, as photos are taken.
+
 ## 2. Things that need access, and the seam each stops at
 
 | Feature | Who to ask | What is built without them | What their answer unlocks |
 |---|---|---|---|
 | BranVan live positions | Transportation (TripShot GTFS-RT URL) | Full GTFS-RT parser and cache in Go, tested against MBTA's public feed; tile and expanded view against a fixture | Set one URL |
-| Laundry | The laundry vendor (verify which) | Tile, expanded view, building preference, fixture | An endpoint, or a reverse-engineered one as last resort |
-| Campus events | Verify first: the CampusGroups ICS may be public | ICS fetcher and parser in Go, add-to-Google URL builder, tile | Nothing, if public; a feed URL if not |
+| Laundry | Nobody: CSC's LaundryView is public and scraped (D40) | Everything | Nothing |
+| Campus events | Nobody: the CampusGroups and academic ICS feeds are public (D40) | Everything | Nothing |
 | Study rooms | Library (LibCal API key) | Links to LibCal and 25Live; verify whether a public availability page exists | Native availability grid |
-| Menus | Nobody, but the dining vendor's site can change or block | Scraper with fixture fallback; hand-maintained exceptions | A vendor feed would remove the fragility |
+| Menus and hours | Nobody: brandeishospitality.com is scraped (D40); it can change or block | Scraper with fixture fallback, tested against a saved page | A vendor feed would remove the fragility |
 | NFC card | Card vendor / Brandeis | Nothing | Link to mobile credential if it appears |
 
 ## 3. Build order
@@ -378,16 +401,14 @@ run in parallel; phases mostly cannot.
 
 - [x] Hours tile with followed-venue preference and tabular expanded view.
 - [x] Food tile with per-meal tables and the Grubhub link.
-- [~] Menu scraper in Go, hourly, cached, falling back to the fixture.
-      *The hourly cache and the seam are built; the scraper itself waits on
-      knowing the dining vendor's site. A JSON URL in the menus shape can
-      feed it meanwhile. See WIRING.md.*
+- [x] Menu scraper in Go, hourly, cached, falling back to the fixture.
+      *Scrapes brandeishospitality.com (D40); hours for every venue too.*
 - [x] Events tile; ICS fetcher and parser in Go; add-to-Google URL builder.
-      *The ICS URLs are an owner step; see WIRING.md.*
+      *Both public feeds are the server's defaults (D40).*
 - [x] Sky tile: dome with moon and planets (layer 2); "point your phone"
       orientation view behind a button (layer 3). *Layer 3 needs a real
       phone to test.*
-- [x] Laundry tile with building preference, against a fixture.
+- [x] Laundry tile with building preference; live from LaundryView (D40).
 - [x] BranVan tile with home-stop preference, against a fixture; GTFS-RT
       parser and cache in Go tested against MBTA's public feed.
 
@@ -412,7 +433,6 @@ Only once the above is on a URL:
 
 - [ ] Transportation: the GTFS-RT feed URL. Show them the tile working against
       MBTA data.
-- [ ] Laundry vendor: an endpoint.
 - [ ] Library: a LibCal key, if the public page was not enough.
 - [ ] Student Affairs: a sponsor, continuity, and an introduction to the
       Branda team.
@@ -421,8 +441,10 @@ Only once the above is on a URL:
 
 Unchanged from the PRD, plus two the interview added:
 
-- Which dining, laundry, and room-booking vendors are current?
-- Is the CampusGroups events ICS public, or per-user?
+- Room-booking vendor: LibCal for study rooms is confirmed; is there a
+  public availability endpoint? (Dining is Brandeis Hospitality on
+  brandeishospitality.com; laundry is CSC ServiceWorks on LaundryView;
+  both are scraped, D40.)
 - Will Transportation share the TripShot GTFS-RT feed?
 - Does Brandeis plan to offer mobile credential for the new cards?
 - Does LibCal expose a public availability endpoint for study rooms?

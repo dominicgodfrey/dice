@@ -76,16 +76,16 @@ Tick items here as you do them; the code side of each is already built.
 Each feed is a server environment variable. Unset, the fixture is served;
 set, the server refreshes it on a schedule and serves the last good copy.
 
-- [ ] **Campus events ICS.** Find the CampusGroups calendar's ICS export
-      (check whether it is public or per-user) and the registrar's
-      academic calendar ICS, then set
-      `EVENTS_ICS_URLS=campus=<url>,academic=<url>`. Refreshed hourly.
-- [ ] **Dining vendor.** Find out which company runs Brandeis dining and
-      where its menus live online. The scraper is not written yet because
-      that is unknown; the seam is `server/internal/feeds/feeds.go` under
-      `Menus`. As a stopgap, anything that hosts a JSON file in the menus
-      shape (see `server/fixtures/menus.json`) can be set as
-      `MENUS_JSON_URL` and the Food tile goes live.
+- [x] **Campus events.** Both ICS feeds turned out to be public and are
+      the server's defaults; nothing to do. `EVENTS_ICS_URLS` overrides.
+- [x] **Dining hours and menus.** Brandeis Hospitality's site is public
+      and scraped; nothing to do. `MENUS_JSON_URL` overrides, `SCRAPE=0`
+      turns every scraper off.
+- [x] **Laundry.** LaundryView's API is public and scraped; nothing to do.
+- [ ] **Watch the scrapers.** Each is tested against a saved copy of the
+      real page, so when a site changes the deploy's test run fails and
+      the tile shows the fixture until the parser is updated. Worth a
+      glance at the server log after the first week of term.
 - [ ] **BranVan feed.** When Transportation shares the TripShot GTFS-RT
       TripUpdates URL, set `SHUTTLE_GTFS_RT_URL`, and the VehiclePositions
       URL as `SHUTTLE_GTFS_RT_VEHICLES_URL` so the vans show on the route.
@@ -112,11 +112,13 @@ Each is a few minutes against the real site. The code marks each spot.
 
 ## Map (PLAN.md D39)
 
-- [ ] **Correct the building footprints** in `server/fixtures/campus.json`:
-      centre, width, height and rotation are approximate. A walk with a
-      phone, or tracing a satellite view, fixes them. Add entrances and
-      rooms you care about; add photo checkpoints (`photos`) as you take
-      them. Then `npm run sync-fixtures` in `app/`.
+- [ ] **Check the building label positions** in
+      `server/fixtures/campus.json` against the imagery; they are
+      approximate. Add entrances and rooms you care about; add photo
+      checkpoints (`photos`) as you take them. Then `npm run sync-fixtures`
+      in `app/`. To refresh or enlarge the imagery, re-run the export URL
+      recorded in `app/src/map/imagery.json` and update its extent from
+      the same request with `f=json`.
 
 ## Before students see it
 
@@ -132,7 +134,5 @@ Each is a few minutes against the real site. The code marks each spot.
 Only once the above is on a URL:
 
 - [ ] Transportation: the TripShot GTFS-RT feed URL.
-- [ ] Laundry vendor: an endpoint (first find out which vendor).
 - [ ] Library: a LibCal key, if the public availability page is not enough.
 - [ ] Student Affairs: a sponsor and an introduction to the Branda team.
-- [ ] CampusGroups: check whether the events ICS is public or per-user.
