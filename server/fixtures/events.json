@@ -1,0 +1,61 @@
+{
+  "updated": "2026-09-11",
+  "source": "fixture",
+  "note": "Sample data behind the events seam. Replaced by the CampusGroups ICS and the registrar's academic calendar once the fetcher runs (Phase 4). Times are ISO 8601 with offset.",
+  "events": [
+    {
+      "id": "sample-1",
+      "title": "Club Fair",
+      "start": "2026-09-11T14:00:00-04:00",
+      "end": "2026-09-11T16:00:00-04:00",
+      "location": "Great Lawn",
+      "category": "campus",
+      "url": "https://brandeis.campusgroups.com"
+    },
+    {
+      "id": "sample-2",
+      "title": "Late-night breakfast",
+      "start": "2026-09-11T22:00:00-04:00",
+      "end": "2026-09-11T23:30:00-04:00",
+      "location": "Sherman Dining Hall",
+      "category": "campus",
+      "url": "https://brandeis.campusgroups.com"
+    },
+    {
+      "id": "sample-3",
+      "title": "Shabbat dinner",
+      "start": "2026-09-12T19:00:00-04:00",
+      "end": "2026-09-12T21:00:00-04:00",
+      "location": "Berlin Chapel",
+      "category": "campus",
+      "url": "https://brandeis.campusgroups.com"
+    },
+    {
+      "id": "sample-4",
+      "title": "Farmers market",
+      "start": "2026-09-13T11:00:00-04:00",
+      "end": "2026-09-13T14:00:00-04:00",
+      "location": "Fellows Garden",
+      "category": "campus",
+      "url": "https://brandeis.campusgroups.com"
+    },
+    {
+      "id": "sample-5",
+      "title": "Add/drop deadline",
+      "start": "2026-09-15T00:00:00-04:00",
+      "end": "2026-09-15T23:59:00-04:00",
+      "location": "",
+      "category": "academic",
+      "url": "https://www.brandeis.edu/registrar/calendar/"
+    },
+    {
+      "id": "sample-6",
+      "title": "Yom Kippur (no classes)",
+      "start": "2026-09-21T00:00:00-04:00",
+      "end": "2026-09-21T23:59:00-04:00",
+      "location": "",
+      "category": "academic",
+      "url": "https://www.brandeis.edu/registrar/calendar/"
+    }
+  ]
+}

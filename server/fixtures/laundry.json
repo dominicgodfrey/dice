@@ -1,0 +1,87 @@
+{
+  "updated": "2026-09-11",
+  "source": "fixture",
+  "note": "Sample data behind the laundry seam (PLAN.md section 2). Replaced by the vendor feed when one is granted. Statuses: available, in_use, out_of_order.",
+  "buildings": [
+    {
+      "id": "massell",
+      "name": "Massell Quad",
+      "rooms": [
+        {
+          "id": "massell-shapiro",
+          "name": "Shapiro basement",
+          "machines": [
+            { "id": "w1", "type": "washer", "status": "available", "minutesLeft": null },
+            { "id": "w2", "type": "washer", "status": "in_use", "minutesLeft": 14 },
+            { "id": "w3", "type": "washer", "status": "available", "minutesLeft": null },
+            { "id": "d1", "type": "dryer", "status": "in_use", "minutesLeft": 32 },
+            { "id": "d2", "type": "dryer", "status": "available", "minutesLeft": null },
+            { "id": "d3", "type": "dryer", "status": "out_of_order", "minutesLeft": null }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "north",
+      "name": "North Quad",
+      "rooms": [
+        {
+          "id": "north-scheffres",
+          "name": "Scheffres basement",
+          "machines": [
+            { "id": "w1", "type": "washer", "status": "in_use", "minutesLeft": 7 },
+            { "id": "w2", "type": "washer", "status": "in_use", "minutesLeft": 22 },
+            { "id": "d1", "type": "dryer", "status": "available", "minutesLeft": null },
+            { "id": "d2", "type": "dryer", "status": "available", "minutesLeft": null }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "east",
+      "name": "East Quad",
+      "rooms": [
+        {
+          "id": "east-hassenfeld",
+          "name": "Hassenfeld basement",
+          "machines": [
+            { "id": "w1", "type": "washer", "status": "available", "minutesLeft": null },
+            { "id": "w2", "type": "washer", "status": "available", "minutesLeft": null },
+            { "id": "d1", "type": "dryer", "status": "in_use", "minutesLeft": 41 },
+            { "id": "d2", "type": "dryer", "status": "in_use", "minutesLeft": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "village",
+      "name": "The Village",
+      "rooms": [
+        {
+          "id": "village-a",
+          "name": "Village A",
+          "machines": [
+            { "id": "w1", "type": "washer", "status": "available", "minutesLeft": null },
+            { "id": "d1", "type": "dryer", "status": "available", "minutesLeft": null }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ziv",
+      "name": "Ziv Quad",
+      "rooms": [
+        {
+          "id": "ziv-127",
+          "name": "Ziv 127",
+          "machines": [
+            { "id": "w1", "type": "washer", "status": "in_use", "minutesLeft": 18 },
+            { "id": "w2", "type": "washer", "status": "available", "minutesLeft": null },
+            { "id": "d1", "type": "dryer", "status": "available", "minutesLeft": null },
+            { "id": "d2", "type": "dryer", "status": "in_use", "minutesLeft": 25 }
+          ]
+        }
+      ]
+    }
+  ]
+}

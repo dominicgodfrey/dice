@@ -1,0 +1,49 @@
+{
+  "updated": "2026-09-11",
+  "source": "fixture",
+  "note": "Sample data behind the BranVan seam (PLAN.md section 2). Replaced by the TripShot GTFS-RT feed when Transportation shares the URL. Stop coordinates are approximate.",
+  "routes": [
+    {
+      "id": "campus",
+      "name": "Campus BranVan",
+      "color": "#5A67D8",
+      "stops": ["rabb", "usdan", "charles-river", "gosman", "village"]
+    },
+    {
+      "id": "waltham",
+      "name": "Waltham BranVan",
+      "color": "#2E9E6B",
+      "stops": ["rabb", "moody-street", "waltham-commons"]
+    },
+    {
+      "id": "boston",
+      "name": "Boston/Cambridge",
+      "color": "#E8613C",
+      "stops": ["rabb", "harvard-square", "copley"]
+    }
+  ],
+  "stops": [
+    { "id": "rabb", "name": "Rabb Steps", "lat": 42.3660, "lon": -71.2600 },
+    { "id": "usdan", "name": "Usdan", "lat": 42.3672, "lon": -71.2585 },
+    { "id": "charles-river", "name": "Charles River Apartments", "lat": 42.3705, "lon": -71.2620 },
+    { "id": "gosman", "name": "Gosman", "lat": 42.3690, "lon": -71.2560 },
+    { "id": "village", "name": "The Village", "lat": 42.3640, "lon": -71.2575 },
+    { "id": "moody-street", "name": "Moody Street", "lat": 42.3730, "lon": -71.2360 },
+    { "id": "waltham-commons", "name": "Waltham Commons", "lat": 42.3760, "lon": -71.2350 },
+    { "id": "harvard-square", "name": "Harvard Square", "lat": 42.3736, "lon": -71.1190 },
+    { "id": "copley", "name": "Copley Square", "lat": 42.3500, "lon": -71.0770 }
+  ],
+  "arrivals": [
+    { "stopId": "rabb", "routeId": "campus", "minutes": [3, 15, 27] },
+    { "stopId": "rabb", "routeId": "waltham", "minutes": [9, 39] },
+    { "stopId": "rabb", "routeId": "boston", "minutes": [42] },
+    { "stopId": "usdan", "routeId": "campus", "minutes": [6, 18, 30] },
+    { "stopId": "charles-river", "routeId": "campus", "minutes": [1, 13, 25] },
+    { "stopId": "gosman", "routeId": "campus", "minutes": [10, 22, 34] },
+    { "stopId": "village", "routeId": "campus", "minutes": [8, 20, 32] },
+    { "stopId": "moody-street", "routeId": "waltham", "minutes": [19, 49] },
+    { "stopId": "waltham-commons", "routeId": "waltham", "minutes": [24, 54] },
+    { "stopId": "harvard-square", "routeId": "boston", "minutes": [72] },
+    { "stopId": "copley", "routeId": "boston", "minutes": [95] }
+  ]
+}
