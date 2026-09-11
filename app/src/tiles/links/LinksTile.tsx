@@ -1,34 +1,121 @@
-// The Links tile (PLAN.md D35): the student's links as a grid of icons
-// that resize to fill the tile; each opens its URL. Expanded, every link
-// that can sit on the tile, with a toggle.
+// The Links tile (PLAN.md D35, D46): the student's links as icons that fill
+// the tile, every icon the same size, whatever shape the packer gave the
+// tile: a row, the tail of a row, or an L. Each opens its URL. Expanded,
+// every link that can sit on the tile, with a toggle.
 
 import { useState } from "react";
 import { Linking, Pressable, StyleSheet, View } from "react-native";
+import type { Shape } from "../../grid/layout";
 import { usePreferences } from "../../preferences/store";
 import { PROMOTABLE, type SearchEntry } from "../../search/entries";
 import { Icon } from "../../ui/Icon";
 import { Text } from "../../ui/Text";
 import { colors, space, type } from "../../ui/theme";
-import { CollapsedShell, ExpandedShell, t } from "../shells";
-import { iconGrid, linkEntries, toggleLink } from "./links";
+import {
+  CollapsedHead,
+  CollapsedShell,
+  ExpandedShell,
+  t,
+  Watermark,
+} from "../shells";
+import { layoutIcons, linkEntries, toggleLink } from "./links";
 
 const GAP = 8;
+/** The collapsed header row plus the gap under it. */
+const HEAD_HEIGHT = 22 + space.sm;
 
 function open(e: SearchEntry) {
   if (e.action.kind === "url")
     Linking.openURL(e.action.url.replace("{query}", "")).catch(() => {});
 }
 
-export function LinksCollapsed() {
+function LinkIcons({ links, size }: { links: SearchEntry[]; size: number }) {
+  const showLabels = size >= 64;
+  return (
+    <View style={styles.icons} pointerEvents="box-none">
+      {links.map((e) => (
+        <Pressable
+          key={e.id}
+          accessibilityRole="link"
+          accessibilityLabel={e.title}
+          onPress={() => open(e)}
+          style={({ pressed }) => [
+            styles.cell,
+            { width: size, height: size },
+            pressed && styles.pressed,
+          ]}
+        >
+          <Icon
+            name={e.icon}
+            size={Math.min(28, Math.max(16, size * 0.36))}
+            color={colors.onDark}
+          />
+          {showLabels ? (
+            <Text style={styles.cellLabel} numberOfLines={1}>
+              {e.title}
+            </Text>
+          ) : null}
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+/** The tile drawn box by box: the header in the first, icons in all. */
+function ShapedLinks({ links, shape }: { links: SearchEntry[]; shape: Shape }) {
+  const pad = space.lg;
+  const boxes = shape.boxes.map((c, i) => ({
+    w: c.width - pad * 2,
+    h: c.height - pad * 2 - (i === 0 ? HEAD_HEIGHT : 0),
+  }));
+  const { size, counts } = layoutIcons(links.length, boxes, GAP);
+  const slices: SearchEntry[][] = [];
+  let start = 0;
+  for (const n of counts) {
+    slices.push(links.slice(start, start + n));
+    start += n;
+  }
+  return (
+    <>
+      {shape.boxes.map((c, i) => {
+        return (
+          <View
+            key={i}
+            pointerEvents="box-none"
+            style={[
+              styles.cellBox,
+              { left: c.x, top: c.y, width: c.width, height: c.height },
+            ]}
+          >
+            {i === 0 ? (
+              <>
+                <Watermark icon="link" />
+                <CollapsedHead title="Links" icon="link" />
+              </>
+            ) : null}
+            <View
+              style={[styles.iconsArea, i === 0 && styles.iconsTop]}
+              pointerEvents="box-none"
+            >
+              <LinkIcons links={slices[i]} size={size} />
+            </View>
+          </View>
+        );
+      })}
+    </>
+  );
+}
+
+export function LinksCollapsed({ shape }: { shape?: Shape }) {
   const { prefs } = usePreferences();
   const links = linkEntries(prefs);
   const [box, setBox] = useState({ w: 0, h: 0 });
-  const grid = iconGrid(links.length, box.w, box.h, GAP);
-  const showLabels = grid.cell >= 64;
+  if (shape) return <ShapedLinks links={links} shape={shape} />;
+  const { size } = layoutIcons(links.length, [box], GAP);
   return (
     <CollapsedShell title="Links" icon="link">
       <View
-        style={styles.grid}
+        style={styles.iconsArea}
         onLayout={(e) =>
           setBox({
             w: e.nativeEvent.layout.width,
@@ -36,31 +123,7 @@ export function LinksCollapsed() {
           })
         }
       >
-        {box.w > 0 &&
-          links.map((e) => (
-            <Pressable
-              key={e.id}
-              accessibilityRole="link"
-              accessibilityLabel={e.title}
-              onPress={() => open(e)}
-              style={({ pressed }) => [
-                styles.cell,
-                { width: grid.cell, height: grid.cell },
-                pressed && styles.pressed,
-              ]}
-            >
-              <Icon
-                name={e.icon}
-                size={Math.min(28, Math.max(16, grid.cell * 0.36))}
-                color={colors.onDark}
-              />
-              {showLabels ? (
-                <Text style={styles.cellLabel} numberOfLines={1}>
-                  {e.title}
-                </Text>
-              ) : null}
-            </Pressable>
-          ))}
+        {box.w > 0 ? <LinkIcons links={links} size={size} /> : null}
       </View>
     </CollapsedShell>
   );
@@ -119,14 +182,10 @@ export function LinksExpanded() {
 }
 
 const styles = StyleSheet.create({
-  grid: {
-    flex: 1,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: GAP,
-    alignContent: "flex-end",
-    marginTop: space.sm,
-  },
+  cellBox: { position: "absolute", padding: space.lg },
+  iconsArea: { flex: 1, justifyContent: "flex-end", marginTop: space.sm },
+  iconsTop: { justifyContent: "flex-start" },
+  icons: { flexDirection: "row", flexWrap: "wrap", gap: GAP },
   cell: {
     borderRadius: 12,
     backgroundColor: colors.onDarkFill,

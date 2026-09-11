@@ -1,5 +1,5 @@
-// The Links tile (PLAN.md D35): which links show, and how to lay their
-// icons out so they fill the tile whatever their number. Pure; tested.
+// The Links tile (PLAN.md D35, D46): which links show, and how to lay their
+// icons out so they fill the tile whatever its shape. Pure; tested.
 
 import type { Preferences } from "../../preferences/schema";
 import { ENTRY_BY_ID, type SearchEntry } from "../../search/entries";
@@ -27,27 +27,46 @@ export function toggleLink(
   };
 }
 
-export type IconGrid = { cols: number; rows: number; cell: number };
+export type Box = { w: number; h: number };
+
+export type IconLayout = {
+  /** Side of every icon cell; the same in every box. */
+  size: number;
+  /** How many icons each box takes, in order, summing to n. */
+  counts: number[];
+};
+
+function capacity(b: Box, size: number, gap: number): number {
+  const across = Math.floor((b.w + gap) / (size + gap));
+  const down = Math.floor((b.h + gap) / (size + gap));
+  return Math.max(0, across) * Math.max(0, down);
+}
 
 /**
- * The column count that gives `n` square cells the most room inside a
- * width×height box with `gap` between them.
+ * The largest square cell that lets `n` icons fit across the given boxes
+ * (the tile's unit cells, minus their padding), with `gap` between cells,
+ * and how many land in each box, filled in order.
  */
-export function iconGrid(
-  n: number,
-  width: number,
-  height: number,
-  gap = 8,
-): IconGrid {
-  if (n <= 0) return { cols: 1, rows: 1, cell: Math.min(width, height) };
-  let best: IconGrid = { cols: 1, rows: n, cell: 0 };
-  for (let cols = 1; cols <= n; cols++) {
-    const rows = Math.ceil(n / cols);
-    const cell = Math.min(
-      (width - gap * (cols - 1)) / cols,
-      (height - gap * (rows - 1)) / rows,
-    );
-    if (cell > best.cell) best = { cols, rows, cell };
+export function layoutIcons(n: number, boxes: Box[], gap = 8): IconLayout {
+  const usable = boxes.filter((b) => b.w > 0 && b.h > 0);
+  if (n <= 0 || usable.length === 0) {
+    return { size: 0, counts: boxes.map(() => 0) };
   }
-  return best;
+  const max = Math.max(...usable.map((b) => Math.min(b.w, b.h)));
+  let size = 0;
+  for (let s = Math.floor(max); s >= 8; s--) {
+    const total = boxes.reduce((sum, b) => sum + capacity(b, s, gap), 0);
+    if (total >= n) {
+      size = s;
+      break;
+    }
+  }
+  if (size === 0) size = 8;
+  let left = n;
+  const counts = boxes.map((b) => {
+    const take = Math.min(left, capacity(b, size, gap));
+    left -= take;
+    return take;
+  });
+  return { size, counts };
 }

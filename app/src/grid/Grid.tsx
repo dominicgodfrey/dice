@@ -58,11 +58,12 @@ import {
   orderFromVisible,
   visibleTiles,
 } from "./order";
-import { pack, type Placed } from "./pack";
+import { isBox, pack, type Cell, type Placed } from "./pack";
 import { TileMenu } from "./TileMenu";
 
 const PADDING = 16;
 const SPRING = { damping: 24, stiffness: 260 };
+const isFill = (t: TileDef) => t.fill === true;
 
 export function Grid() {
   const router = useRouter();
@@ -82,10 +83,7 @@ export function Grid() {
   // The order before the move began, restored on cancel.
   const [original, setOriginal] = useState<string[] | null>(null);
 
-  const { placed, rows } = useMemo(
-    () => pack(tiles, (t) => t.span, columns),
-    [tiles, columns],
-  );
+  const { placed, rows } = pack(tiles, (t) => t.span, columns, isFill);
   const height = Math.max(rows * unit + (rows - 1) * GUTTER, unit);
   const rectOf = (p: Placed<TileDef>): Rect => ({
     x: p.x * stride,
@@ -93,6 +91,39 @@ export function Grid() {
     width: p.w * cell + (p.w - 1) * GUTTER,
     height: p.h * unit + (p.h - 1) * GUTTER,
   });
+  // An L (D46) is painted as two rounded rectangles: the stem, the top
+  // row's columns stretched down through the bottom row so no gutter shows
+  // between them, and the bottom row. Its content gets two boxes: the stem
+  // above the bottom row, and the bottom row.
+  const shapeOf = (p: Placed<TileDef>): TileShape | undefined => {
+    if (isBox(p)) return undefined;
+    const byRow = new Map<number, Cell[]>();
+    for (const c of p.cells) byRow.set(c.y, [...(byRow.get(c.y) ?? []), c]);
+    const ys = [...byRow.keys()].sort((a, b) => a - b);
+    const run = (y: number): [number, number] => {
+      const xs = (byRow.get(y) ?? []).map((c) => c.x);
+      return [Math.min(...xs), Math.max(...xs)];
+    };
+    const local = (x0: number, x1: number, y0: number, y1: number): Rect => ({
+      x: (x0 - p.x) * stride,
+      y: (y0 - p.y) * strideY,
+      width: (x1 - x0 + 1) * cell + (x1 - x0) * GUTTER,
+      height: (y1 - y0 + 1) * unit + (y1 - y0) * GUTTER,
+    });
+    const top = ys[0];
+    const bottom = ys[ys.length - 1];
+    const [sx0, sx1] = run(top);
+    const [bx0, bx1] = run(bottom);
+    const pieces = [
+      local(sx0, sx1, top, bottom),
+      local(bx0, bx1, bottom, bottom),
+    ];
+    const boxes = [
+      local(sx0, sx1, top, bottom - 1),
+      local(bx0, bx1, bottom, bottom),
+    ];
+    return { pieces, boxes, base: 1 };
+  };
 
   const dragX = useSharedValue(0);
   const dragY = useSharedValue(0);
@@ -139,7 +170,12 @@ export function Grid() {
       const w = visibleTiles(p, TILES);
       const from = w.findIndex((t) => t.id === moving);
       if (from < 0) return {};
-      const { placed: laid, rows: laidRows } = pack(w, (t) => t.span, columns);
+      const { placed: laid, rows: laidRows } = pack(
+        w,
+        (t) => t.span,
+        columns,
+        isFill,
+      );
       const covers = (q: Placed<TileDef>) =>
         col >= q.x && col < q.x + q.w && row >= q.y && row < q.y + q.h;
       const own = laid.find((q) => q.item.id === moving);
@@ -229,6 +265,7 @@ export function Grid() {
                   def={p.item}
                   color={tileColor(prefs, p.item)}
                   rect={rectOf(p)}
+                  shape={shapeOf(p)}
                   moving={moving}
                   dragX={dragX}
                   dragY={dragY}
@@ -314,10 +351,15 @@ function Gap({ rect }: { rect: Rect }) {
   return <Animated.View style={[styles.gap, style]} />;
 }
 
+/** How a non-rectangular tile is drawn: painted pieces, content boxes, and
+ * which piece the expansion grows from. */
+type TileShape = { pieces: Rect[]; boxes: Rect[]; base: number };
+
 type GridTileProps = {
   def: TileDef;
   color: string;
   rect: Rect;
+  shape?: TileShape;
   moving: boolean;
   dragX: { value: number };
   dragY: { value: number };
@@ -329,6 +371,7 @@ function GridTile({
   def,
   color,
   rect,
+  shape,
   moving,
   dragX,
   dragY,
@@ -375,6 +418,39 @@ function GridTile({
     };
   }, [moving, rect]);
 
+  if (shape) {
+    return (
+      <Animated.View
+        style={[styles.shaped, moving && styles.lifted, style]}
+        pointerEvents="box-none"
+      >
+        {shape.pieces.map((r, i) => (
+          <Pressable
+            key={i}
+            ref={i === shape.base ? ref : undefined}
+            accessibilityRole="button"
+            accessibilityLabel={i === shape.base ? def.title : undefined}
+            onPress={onPress ?? (() => expand(def.id))}
+            onLongPress={onLongPress}
+            style={[
+              styles.piece,
+              {
+                left: r.x,
+                top: r.y,
+                width: r.width,
+                height: r.height,
+                backgroundColor: color,
+              },
+            ]}
+          />
+        ))}
+        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+          <Tile def={def} expanded={false} shape={{ boxes: shape.boxes }} />
+        </View>
+      </Animated.View>
+    );
+  }
+
   return (
     <Animated.View style={[styles.tile, moving && styles.lifted, style]}>
       <Pressable
@@ -399,6 +475,12 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: 140 },
   content: { alignItems: "center", padding: PADDING },
   tile: { position: "absolute", borderRadius: TILE_RADIUS, overflow: "hidden" },
+  shaped: { position: "absolute" },
+  piece: {
+    position: "absolute",
+    borderRadius: TILE_RADIUS,
+    overflow: "hidden",
+  },
   lifted: {
     shadowColor: "#000000",
     shadowOpacity: 0.25,

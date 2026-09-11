@@ -35,6 +35,11 @@ export function contentWidthFor(windowWidth: number, padding: number): number {
 
 export type Rect = { x: number; y: number; width: number; height: number };
 
+/** A non-rectangular tile as the rectangles its content lays out in, in
+ * the tile's own frame: for an L, the stem above the bottom row, then the
+ * bottom row. */
+export type Shape = { boxes: Rect[] };
+
 /** Where an expanded tile ends up: the whole window on a phone, a capped, centred card when wide. */
 export function expandedRect(windowWidth: number, windowHeight: number): Rect {
   if (windowWidth <= WIDE_BREAKPOINT) {

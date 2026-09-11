@@ -30,16 +30,34 @@ export function CollapsedShell({
 }) {
   return (
     <View style={styles.collapsed}>
-      {art ? (
-        <View style={styles.watermark} pointerEvents="none">
-          <Icon name={icon} size={72} color={colors.onDarkWatermark} />
-        </View>
-      ) : null}
-      <View style={styles.collapsedHead}>
-        <Icon name={icon} size={15} color={colors.onDarkMuted} />
-        <Text style={styles.collapsedTitle}>{title}</Text>
-      </View>
+      {art ? <Watermark icon={icon} /> : null}
+      <CollapsedHead title={title} icon={icon} />
       <View style={styles.collapsedBody}>{children}</View>
+    </View>
+  );
+}
+
+/** The small icon-and-title row at the top of a collapsed tile. */
+export function CollapsedHead({
+  title,
+  icon,
+}: {
+  title: string;
+  icon: IconName;
+}) {
+  return (
+    <View style={styles.collapsedHead}>
+      <Icon name={icon} size={15} color={colors.onDarkMuted} />
+      <Text style={styles.collapsedTitle}>{title}</Text>
+    </View>
+  );
+}
+
+/** The tile's icon, large and faint, in the top-right corner (D45). */
+export function Watermark({ icon }: { icon: IconName }) {
+  return (
+    <View style={styles.watermark} pointerEvents="none">
+      <Icon name={icon} size={72} color={colors.onDarkWatermark} />
     </View>
   );
 }

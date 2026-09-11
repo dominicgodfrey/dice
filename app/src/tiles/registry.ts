@@ -13,9 +13,12 @@ export type TileId =
 export type TileDef = {
   id: TileId;
   title: string;
+  /** The tile's size; for a fill tile, its size when packed alone (D46). */
   span: Span;
   icon: IconName;
   paletteKey: PaletteKey;
+  /** Packed last, into whatever is left of the last row, an L if need be. */
+  fill?: true;
 };
 
 export const TILES: readonly TileDef[] = [
@@ -74,6 +77,7 @@ export const TILES: readonly TileDef[] = [
     span: { w: 2, h: 1 },
     icon: "link",
     paletteKey: "slate",
+    fill: true,
   },
 ];
 

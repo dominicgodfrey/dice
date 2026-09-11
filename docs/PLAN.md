@@ -378,6 +378,18 @@ faults fixed on the server at the same time: a station listed once per
 sitting of a meal now merges, and a meal listed as three sittings
 (Sherman's brunch) becomes one span, so the app never sees duplicates.
 
+**D47. Links is a fill tile: last in the grid, shaped by what is left.**
+*Revises D35.* The packer places it after every other tile, into the
+free cells at the end of the last row plus any free rows above them, or
+a whole new row if the last is full. When the free run is one cell wide
+it also takes the whole next row and becomes an L, drawn as two rounded
+rectangles with the seam hidden. Its icons are laid out at one size
+across the stem and the base, the largest size at which they all fit,
+so the tile is full and every icon is the same. The owner's ask was a
+tile that fills the space, in an L if that fills it better, with icons
+that never differ in size. Moving it in the order does nothing; it is
+always last.
+
 ## 2. Things that need access, and the seam each stops at
 
 | Feature | Who to ask | What is built without them | What their answer unlocks |

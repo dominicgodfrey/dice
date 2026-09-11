@@ -23,7 +23,7 @@ Two codebases in one repo:
 ## Where things stand
 
 Every build phase in PLAN.md section 3 is done (Phases 0–5), plus a design
-pass and a scraping pass. 46 numbered decisions, D1–D46, all in PLAN.md
+pass and a scraping pass. 47 numbered decisions, D1–D47, all in PLAN.md
 with the alternative each beat. What remains is in WIRING.md (owner
 steps) and Phase 6 (asks that need a person).
 
@@ -41,7 +41,7 @@ a "Sample data" label. Deploying the server is what turns the tiles live.
 | BranVan | fixture only | TripShot has no public feed; GTFS-RT parser is built and tested on MBTA |
 | Events | CampusGroups + academic ICS, hourly | ~1,900 events |
 | Sky | on-device astronomy | star chart, compass, optional GPS |
-| Links | preferences | one tile of icons, resizes with count |
+| Links | preferences | a fill tile: takes what is left of the grid, an L when that fits (D47) |
 | Map | USGS aerial imagery in the bundle | labels projected onto it |
 
 ### Verified vs not
@@ -55,7 +55,9 @@ all scrapers against the live sites; the web export.
 
 Verified in the browser on 2026-09-11 (second session): the header arc
 by day; the room-level laundry picker; swipe right to close and swipe down
-from the handle after scrolling; the collapsed watermarks.
+from the handle after scrolling; the collapsed watermarks; the laundry
+room page and its red no-connection notice; the menu view; the L-shaped
+links tile at three columns, icons measured equal in the DOM.
 
 Never run on a real device: swipe-to-close over scrolling content, the
 compass, GPS, pinch on the map, native builds of any kind. The owner has
